@@ -8,3 +8,6 @@
 
 ## [2026-11-12] lint 規則修正 | L5 v1 以「整份 raw 檔子字串」比對，漏抓 entropy 頁的「2 bits」（原文為 two bits，'2' 被 base 2 誤配）。改為 v2：只在所引章節內、以完整數字 token 比對
 ## [2026-11-12] lint 修正 | entropy：「0」「2」改回來源用字 zero / two bits（3 個 L5）
+
+## [2026-11-12] ingest 03 | Source coding theorem → 新建 source-coding-theorem；更新 entropy（連到定理）
+## [2026-11-12] lint 修正 | source-coding-theorem：💡 白話行放在列表內被判缺出處（L4），改為行首 💡

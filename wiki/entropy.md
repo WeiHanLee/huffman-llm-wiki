@@ -18,6 +18,6 @@
 - 資訊理論可以算出傳達一則訊息「最少需要多少資訊」，這正是資料壓縮的核心。[src:raw/02-entropy.md#Data compression]
 - 四個字母 A、B、C、D 機率相同時，每個字母需要兩個 bits（two bits）；機率不均時，用長短不一的碼就能平均更少。[src:raw/02-entropy.md#Data compression]
 - 英文文字的熵約為每字元 0.6 到 1.3 bits，所以英文很好壓縮。[src:raw/02-entropy.md#Data compression]
-- 熵是無失真壓縮的極限，見 [[data-compression]]。[src:raw/02-entropy.md#Data compression]
+- 熵是無失真壓縮的極限，這就是 [[source-coding-theorem]]。[src:raw/02-entropy.md#Data compression]
 
-相關：[[data-compression]]、[[lossless-vs-lossy]]
+相關：[[data-compression]]、[[lossless-vs-lossy]]、[[source-coding-theorem]]
