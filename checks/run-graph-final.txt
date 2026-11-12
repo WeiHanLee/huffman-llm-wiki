@@ -1,0 +1,31 @@
+== Wiki lint
+
+頁數 11｜問題 0  
+LINT PASS ✅
+== ① 檢索 + G1
+**結果：PASS ✅**（相關頁 9 頁）
+== ② 證據卡（平行）
+huffman-vs-arithmetic: 11 條主張
+entropy: 12 條主張
+huffman-coding: 22 條主張
+data-compression: 6 條主張
+arithmetic-coding: 12 條主張
+shannon-fano: 13 條主張
+source-coding-theorem: 6 條主張
+lossless-vs-lossy: 7 條主張
+prefix-code: 4 條主張
+== G2 逐頁稿檢查
+
+頁數 14｜問題 0
+G2 PASS ✅
+== ⑤ 渲染
+deck.html：15 頁（14 頁內容＋參考來源）
+== G3 渲染檢查
+  · Huffman 樹碼字＝卡片：{'d': '00', 'a': '010', 'b': '011', 'e': '10', 'c': '11'}
+  · 算術區間＝calc：[['0', '0.6'], ['0.48', '0.54'], ['0.534', '0.54']]
+  · 手機 390px：頁寬 390px，無橫向捲動
+  · 環境：沙盒無法連到 Google Fonts（1 筆），以系統字型 Noto Sans CJK TC 量測；發布後正常載入
+
+問題 0
+G3 PASS ✅
+== 全部關卡通過 → 可交件
