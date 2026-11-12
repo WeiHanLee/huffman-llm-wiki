@@ -11,4 +11,6 @@
 - 熵編碼（entropy coding）起源於 1940s 的 Shannon–Fano 編碼，它是 Huffman 編碼的基礎。[src:raw/01-data-compression.md#Theory]
 - 算術編碼（arithmetic coding）是較現代的技術，壓縮效果可以比 Huffman 編碼更好，也適合統計特性會隨時間變化的「自適應模型」。[src:raw/01-data-compression.md#Theory]
 
-相關：[[lossless-vs-lossy]]
+- 壓縮能壓到多小，極限由「熵」決定，見 [[entropy]]。[src:raw/02-entropy.md#Data compression]
+
+相關：[[lossless-vs-lossy]]、[[entropy]]

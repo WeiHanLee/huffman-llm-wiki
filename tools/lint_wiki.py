@@ -26,6 +26,13 @@ def raw_headings(path: Path) -> set:
     return {m.group(1).strip() for m in re.finditer(r"^#{2,3}\s+(.+)$", path.read_text(encoding="utf-8"), re.M)}
 
 
+def raw_section(path: Path, heading: str) -> str:
+    """只回傳 raw 檔中指定 ## 章節的內容（v2：避免整檔子字串誤判）。"""
+    text = path.read_text(encoding="utf-8")
+    m = re.search(rf"^#{{2,3}}\s+{re.escape(heading)}\s*$(.*?)(?=^#{{2,3}}\s|\Z)", text, re.M | re.S)
+    return m.group(1) if m else ""
+
+
 def strip_markup(line: str) -> str:
     line = SRC_RE.sub("", line)
     line = CALC_RE.sub("", line)
@@ -85,11 +92,11 @@ def main() -> int:
                     continue
                 if heading.strip() not in raw_headings(rp):
                     issues.append(("L4", f"wiki/{name}.md:{lineno}", f"{fname} 沒有章節「{heading}」"))
-                raw_texts.append(rp.read_text(encoding="utf-8"))
-            # L5 數字可追溯
-            joined = "\n".join(raw_texts)
+                raw_texts.append(raw_section(rp, heading.strip()))
+            # L5 數字可追溯（v2：只在所引章節內、以完整數字 token 比對）
+            source_nums = set(numbers_in("\n".join(raw_texts)))
             for num in numbers_in(strip_markup(line)):
-                if num in joined:
+                if num in source_nums:
                     continue
                 if has_calc and num in calc_values:
                     continue

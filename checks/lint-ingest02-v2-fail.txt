@@ -1,0 +1,6 @@
+[L5] wiki/entropy.md:14  數字「0」在所引來源中找不到
+[L5] wiki/entropy.md:19  數字「2」在所引來源中找不到
+[L5] wiki/entropy.md:19  數字「2」在所引來源中找不到
+
+頁數 5｜問題 3  L5:3
+LINT FAIL ❌
