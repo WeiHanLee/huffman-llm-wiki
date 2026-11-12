@@ -43,7 +43,7 @@ def main():
     for name in order:
         nav.append(f'<a href="#w-{name}">{html.escape(titles[name])}</a>')
     nav += ['<p class="nav-h">建置紀錄</p>', '<a href="#about">關於這個 Wiki</a>', '<a href="#discussion">先討論：需求訪談</a>',
-            '<a href="#agents">AGENTS.md（員工手冊）</a>', '<a href="#w-log">log.md</a>', '<a href="#git">git 紀錄</a>', '<a href="#lint">lint 結果</a>',
+            '<a href="#agents">AGENTS.md（員工手冊）</a>', '<a href="#workflow">簡報 Graph 設計</a>', '<a href="#report">一次實際執行報告</a>', '<a href="#w-log">log.md</a>', '<a href="#git">git 紀錄</a>', '<a href="#lint">lint 結果</a>',
             '<p class="nav-h">原始來源 raw/</p>']
     for name in ["index"] + order + ["log"]:
         sections.append(f'<article class="page" id="w-{name}"><p class="path mono">wiki/{name}.md</p>{md(wiki[name], titles)}</article>')
@@ -52,8 +52,10 @@ def main():
         t = r.read_text(encoding="utf-8")
         nav.append(f'<a href="#raw-{r.stem}">{html.escape(t.splitlines()[0].lstrip("# ").replace("（Wikipedia）", ""))}</a>')
         sections.append(f'<article class="page raw" id="raw-{r.stem}"><p class="path mono">raw/{r.name}（唯讀）</p>{raw_md(r.stem, t)}</article>')
-    for sid, path in [("discussion", "discussion.md"), ("agents", "AGENTS.md")]:
-        sections.append(f'<article class="page" id="{sid}"><p class="path mono">{path}</p>{markdown.markdown((ROOT / path).read_text(encoding="utf-8"), extensions=["tables", "fenced_code"])}</article>')
+    for sid, path in [("discussion", "discussion.md"), ("agents", "AGENTS.md"), ("workflow", ".agents/workflows/topic-slides.md"), ("report", "topic-huffman-arith/report.md")]:
+        body = markdown.markdown((ROOT / path).read_text(encoding="utf-8"), extensions=["tables", "fenced_code"])
+        body = re.sub(r'<pre><code class="language-mermaid">(.*?)</code></pre>', lambda m: '<pre class="mermaid">' + m.group(1) + '</pre>', body, flags=re.S)
+        sections.append(f'<article class="page" id="{sid}"><p class="path mono">{path}</p>{body}</article>')
     gitlog = subprocess.run(["git", "log", "--reverse", "--format=%h|%ad|%s", "--date=format:%Y-%m-%d %H:%M"], cwd=ROOT, capture_output=True, text=True).stdout.strip().splitlines()
     rows = "".join(f"<tr><td class='mono'>{html.escape(h)}</td><td class='mono'>{html.escape(d)}</td><td>{html.escape(s)}</td></tr>" for h, d, s in (l.split("|", 2) for l in gitlog))
     sections.append(f'<article class="page" id="git"><h1>git 紀錄</h1><p>一次 ingest 一篇、每篇一個 commit（需求第 7 條）。</p><div class="tw"><table><thead><tr><th>commit</th><th>時間</th><th>訊息</th></tr></thead><tbody>{rows}</tbody></table></div></article>')
