@@ -12,3 +12,7 @@
 - [[prefix-code]]：前綴碼——為什麼一串 0/1 能唯一解碼
 - [[shannon-fano]]：由上而下對半切的早期方法，含與 Huffman 的同例比較
 - [[huffman-coding]]：由下而上合併的最佳前綴碼，含建樹三步驟與 a–e 例子（⚠ 年代矛盾）
+- [[arithmetic-coding]]：把整則訊息縮成一個小數的區間切分法
+
+## 比較
+- [[huffman-vs-arithmetic]]：整數位元限制、對照表、為何 Huffman 仍廣泛使用

@@ -49,11 +49,13 @@ def numbers_in(text: str) -> list:
     return out
 
 
-def is_content(line: str) -> bool:
+def is_content(line: str, next_is_sep: bool = False) -> bool:
     s = line.strip()
     if not s or s.startswith("#") or s.startswith("💡") or s.startswith("相關："):
         return False
     if re.fullmatch(r"\|?[\s:\-|]+\|?", s):       # 表格分隔線
+        return False
+    if s.startswith("|") and next_is_sep and not re.search(r"\d", s):   # 純標籤表頭（v3）
         return False
     return True
 
@@ -68,7 +70,10 @@ def main() -> int:
     inbound = {name: set() for name in pages}
     for name, path in pages.items():
         text = path.read_text(encoding="utf-8")
-        for lineno, line in enumerate(text.splitlines(), 1):
+        lines = text.splitlines()
+        for lineno, line in enumerate(lines, 1):
+            nxt = lines[lineno] if lineno < len(lines) else ""
+            next_is_sep = bool(re.fullmatch(r"\|?[\s:\-|]+\|?", nxt.strip())) and "-" in nxt
             # L1 斷鏈
             for target in LINK_RE.findall(line):
                 target = target.strip()
@@ -76,7 +81,7 @@ def main() -> int:
                     issues.append(("L1", f"wiki/{name}.md:{lineno}", f"[[{target}]] 指向不存在的頁面"))
                 elif target != name:
                     inbound[target].add(name)
-            if name in EXEMPT_PAGES or not is_content(line):
+            if name in EXEMPT_PAGES or not is_content(line, next_is_sep):
                 continue
             srcs = SRC_RE.findall(line)
             has_calc = bool(CALC_RE.search(line))

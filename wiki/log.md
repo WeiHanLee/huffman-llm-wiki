@@ -18,3 +18,7 @@
 ## [2026-11-12] ingest 05 | Huffman coding → 新建 prefix-code、huffman-coding；更新 shannon-fano、data-compression
 ## [2026-11-12] 矛盾 | Huffman 編碼年代：raw/05 = 1951 修課提出、1952 發表；raw/01 = developed in 1950。兩說並列於 huffman-coding，未裁決
 ## [2026-11-12] lint 修正 | huffman-coding：「來源 05／01」被 L5 誤判為數字 → 改寫成條目名稱；表頭補出處（L4）
+
+## [2026-11-12] ingest 06 | Arithmetic coding → 新建 arithmetic-coding、huffman-vs-arithmetic；更新 huffman-coding、data-compression。以 tools/calc.py 驗證 0.538 落在 [0.534, 0.54)
+## [2026-11-12] lint 修正 | huffman-vs-arithmetic、arithmetic-coding：又把 one bit / powers of two / May 轉成 1、2、5（L5×3），改回來源用字。這是第 3 次同類錯誤 → 寫入 AGENTS.md §4 規則
+## [2026-11-12] lint 規則修正 | v3：不含數字的純標籤表頭不視為主張

@@ -26,6 +26,31 @@ results["sf_entropy"] = round(entropy, 2)
 
 assert results["sf_fano_avg_check"] == 2.28, "Fano 平均碼長和來源 2.28 不符"
 
+# raw/06-arithmetic-coding.md#Defining a model：NEUTRAL 60%、POSITIVE 20%、NEGATIVE 10%、END-OF-DATA 10%
+# raw/06#Decoding example：0.538 解出 NEUTRAL → NEGATIVE → END-OF-DATA
+model = [("NEUTRAL", 0.6), ("POSITIVE", 0.2), ("NEGATIVE", 0.1), ("END-OF-DATA", 0.1)]
+
+
+def narrow(lo, hi, sym):
+    start = lo
+    for name, p in model:
+        width = (hi - lo) * p
+        if name == sym:
+            return start, start + width
+        start += width
+    raise KeyError(sym)
+
+
+lo, hi = 0.0, 1.0
+steps = []
+for sym in ["NEUTRAL", "NEGATIVE", "END-OF-DATA"]:
+    lo, hi = narrow(lo, hi, sym)
+    steps.append((round(lo, 3), round(hi, 3)))
+results["ac_step1_lo"], results["ac_step1_hi"] = steps[0]
+results["ac_step2_lo"], results["ac_step2_hi"] = steps[1]
+results["ac_step3_lo"], results["ac_step3_hi"] = steps[2]
+assert steps[2][0] <= 0.538 < steps[2][1], "0.538 不在最終區間內，和來源矛盾"
+
 out = Path(__file__).with_name("calc_results.json")
 out.write_text(json.dumps(results, ensure_ascii=False, indent=2), encoding="utf-8")
 for k, v in results.items():

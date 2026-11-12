@@ -38,4 +38,4 @@
 - 前綴碼常被當作壓縮流程的最後一段，例如 DEFLATE（PKZIP、gzip 使用）、JPEG、MP3。[src:raw/05-huffman-coding.md#Applications]
 - 傳真機使用修改版的 Huffman 編碼。[src:raw/05-huffman-coding.md#Applications]
 
-相關：[[prefix-code]]、[[shannon-fano]]、[[entropy]]、[[source-coding-theorem]]
+相關：[[prefix-code]]、[[shannon-fano]]、[[entropy]]、[[source-coding-theorem]]、[[arithmetic-coding]]、[[huffman-vs-arithmetic]]
