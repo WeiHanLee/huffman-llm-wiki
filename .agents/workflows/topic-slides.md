@@ -13,7 +13,7 @@
 ```mermaid
 flowchart LR
   A[① 檢索 wiki<br/>tools/retrieve.py] --> G1{G1 覆蓋率關卡}
-  G1 -- 相關頁<3 --> STOP([停下])
+  G1 -- 相關頁少於 3 --> STOP([停下])
   G1 -- 過 --> B[② 證據卡（平行）<br/>tools/make_cards.py]
   B --> C[③ 大綱 outline.md]
   C --> H{👤 人工確認}
@@ -24,7 +24,7 @@ flowchart LR
   G2 -- 退回：只修那頁 --> D
   G2 -- 過 --> R{🧑‍⚖ AI 審查（新對話）<br/>忠實度＋覆蓋率}
   R -- 退回：只修那頁 --> D
-  R -- 退回：卡片錯 --> B
+  R -- 退回：卡片或 wiki 錯 --> B
   R -- 過 --> E[⑤ 渲染 HTML<br/>tools/render_deck.py]
   E --> G3{G3 渲染檢查<br/>tools/check_render.py}
   G3 -- 退回：字太多 → 逐頁稿縮短 --> D

@@ -813,7 +813,7 @@ topic-*/    以 wiki 為知識庫產生的簡報專案（每一關產出都是�
 <h2>Graph</h2>
 <pre class="mermaid">flowchart LR
   A[① 檢索 wiki&lt;br/&gt;tools/retrieve.py] --&gt; G1{G1 覆蓋率關卡}
-  G1 -- 相關頁&lt;3 --&gt; STOP([停下])
+  G1 -- 相關頁少於 3 --&gt; STOP([停下])
   G1 -- 過 --&gt; B[② 證據卡（平行）&lt;br/&gt;tools/make_cards.py]
   B --&gt; C[③ 大綱 outline.md]
   C --&gt; H{👤 人工確認}
@@ -824,7 +824,7 @@ topic-*/    以 wiki 為知識庫產生的簡報專案（每一關產出都是�
   G2 -- 退回：只修那頁 --&gt; D
   G2 -- 過 --&gt; R{🧑‍⚖ AI 審查（新對話）&lt;br/&gt;忠實度＋覆蓋率}
   R -- 退回：只修那頁 --&gt; D
-  R -- 退回：卡片錯 --&gt; B
+  R -- 退回：卡片或 wiki 錯 --&gt; B
   R -- 過 --&gt; E[⑤ 渲染 HTML&lt;br/&gt;tools/render_deck.py]
   E --&gt; G3{G3 渲染檢查&lt;br/&gt;tools/check_render.py}
   G3 -- 退回：字太多 → 逐頁稿縮短 --&gt; D
@@ -1081,7 +1081,7 @@ topic-*/    以 wiki 為知識庫產生的簡報專案（每一關產出都是�
 <h2>最終狀態</h2>
 <p>Wiki lint PASS｜G1 PASS（9 頁相關）｜G2 PASS（14 頁）｜AI 審查第 2 輪 0 錯誤｜G3 PASS（15 頁無溢出、渲染零改字、元件數字可追溯、手機無橫向捲動）
 共 3 輪：第 1 輪退回 wiki＋逐頁稿；第 2 輪審查通過；第 3 輪只動標示，程式檢查全過（未超過全域 3 輪上限）。</p></article>
-<article class="page" id="git"><h1>git 紀錄</h1><p>一次 ingest 一篇、每篇一個 commit（需求第 7 條）。</p><div class="tw"><table><thead><tr><th>commit</th><th>時間</th><th>訊息</th></tr></thead><tbody><tr><td class='mono'>24ae1be</td><td class='mono'>2026-11-12 05:08</td><td>init: AGENTS.md from confirmed requirements (先討論、後生成)</td></tr><tr><td class='mono'>d28f498</td><td class='mono'>2026-11-12 05:09</td><td>ingest 01: Data compression (Wikipedia)</td></tr><tr><td class='mono'>c23c4f0</td><td class='mono'>2026-11-12 05:10</td><td>ingest 02: Entropy (information theory); fix lint L5 to section-scoped token match</td></tr><tr><td class='mono'>caa0d30</td><td class='mono'>2026-11-12 05:10</td><td>ingest 03: Shannon&#x27;s source coding theorem</td></tr><tr><td class='mono'>37272b2</td><td class='mono'>2026-11-12 05:11</td><td>ingest 04: Shannon–Fano coding; add tools/calc.py for derived numbers</td></tr><tr><td class='mono'>f9dfb3e</td><td class='mono'>2026-11-12 05:11</td><td>ingest 05: Huffman coding (contradiction on year flagged)</td></tr><tr><td class='mono'>0f6385e</td><td class='mono'>2026-11-12 05:13</td><td>ingest 06: Arithmetic coding + comparison page; AGENTS.md rule for number wording; lint v3</td></tr><tr><td class='mono'>ea95327</td><td class='mono'>2026-11-12 05:23</td><td>graph round 1: retrieve/cards/outline/drafts v1/deck v1 + AI review (3 errors); wiki fix for review errors 1-2</td></tr><tr><td class='mono'>cb78441</td><td class='mono'>2026-11-12 05:25</td><td>graph round 2: drafts fixed per review, G2/G3 pass</td></tr><tr><td class='mono'>f6084ab</td><td class='mono'>2026-11-12 05:28</td><td>graph round 3: label fixes, gated run_graph.sh, report + workflow revisions</td></tr><tr><td class='mono'>1cf306a</td><td class='mono'>2026-11-12 05:28</td><td>rebuild wiki site</td></tr></tbody></table></div></article>
+<article class="page" id="git"><h1>git 紀錄</h1><p>一次 ingest 一篇、每篇一個 commit（需求第 7 條）。</p><div class="tw"><table><thead><tr><th>commit</th><th>時間</th><th>訊息</th></tr></thead><tbody><tr><td class='mono'>24ae1be</td><td class='mono'>2026-11-12 05:08</td><td>init: AGENTS.md from confirmed requirements (先討論、後生成)</td></tr><tr><td class='mono'>d28f498</td><td class='mono'>2026-11-12 05:09</td><td>ingest 01: Data compression (Wikipedia)</td></tr><tr><td class='mono'>c23c4f0</td><td class='mono'>2026-11-12 05:10</td><td>ingest 02: Entropy (information theory); fix lint L5 to section-scoped token match</td></tr><tr><td class='mono'>caa0d30</td><td class='mono'>2026-11-12 05:10</td><td>ingest 03: Shannon&#x27;s source coding theorem</td></tr><tr><td class='mono'>37272b2</td><td class='mono'>2026-11-12 05:11</td><td>ingest 04: Shannon–Fano coding; add tools/calc.py for derived numbers</td></tr><tr><td class='mono'>f9dfb3e</td><td class='mono'>2026-11-12 05:11</td><td>ingest 05: Huffman coding (contradiction on year flagged)</td></tr><tr><td class='mono'>0f6385e</td><td class='mono'>2026-11-12 05:13</td><td>ingest 06: Arithmetic coding + comparison page; AGENTS.md rule for number wording; lint v3</td></tr><tr><td class='mono'>ea95327</td><td class='mono'>2026-11-12 05:23</td><td>graph round 1: retrieve/cards/outline/drafts v1/deck v1 + AI review (3 errors); wiki fix for review errors 1-2</td></tr><tr><td class='mono'>cb78441</td><td class='mono'>2026-11-12 05:25</td><td>graph round 2: drafts fixed per review, G2/G3 pass</td></tr><tr><td class='mono'>f6084ab</td><td class='mono'>2026-11-12 05:28</td><td>graph round 3: label fixes, gated run_graph.sh, report + workflow revisions</td></tr><tr><td class='mono'>1cf306a</td><td class='mono'>2026-11-12 05:28</td><td>rebuild wiki site</td></tr><tr><td class='mono'>0529549</td><td class='mono'>2026-11-12 05:28</td><td>wiki site: include workflow + report</td></tr></tbody></table></div></article>
 <article class="page" id="lint"><h1>lint 結果（目前版本）</h1><p>由 <code>tools/lint_wiki.py</code> 執行 L1 斷鏈、L2 孤兒頁、L3 index 漏列、L4 主張缺出處、L5 數字查不到。</p><pre>
 頁數 11｜問題 0  
 LINT PASS ✅
