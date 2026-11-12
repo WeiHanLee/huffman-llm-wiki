@@ -1,0 +1,380 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<style>*,*::before,*::after{box-sizing:border-box}body{margin:0}img{max-width:100%}[hidden]{display:none!important}</style>
+</head>
+<body>
+<title>Huffman 與算術編碼入門</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700;900&family=Space+Grotesk:wght@500;700&family=JetBrains+Mono:wght@400;600&display=swap">
+<style>
+/* Layout: 16:9 stage scaled to the window, one slide at a time; on phones the slides stack and scroll.
+   Motif: bitstreams — mono "0101" eyebrows, cobalt for structure, amber for the bit that matters. */
+:root {
+  --bg: #eef1f6;
+  --stage: #fbfcfe;
+  --ink: #142033;
+  --muted: #5b6678;
+  --line: #d5dbe6;
+  --accent: #2c54d6;
+  --accent-soft: #e3e9fb;
+  --bit: #c98a00;
+  --bit-soft: #fbf0d6;
+  --warn: #b4492f;
+  --warn-soft: #f8e5df;
+  --seg1: #2c54d6; --seg2: #4f8fd9; --seg3: #c98a00; --seg4: #8a94a6;
+  --font-body: "Noto Sans TC", "PingFang TC", "Microsoft JhengHei", system-ui, sans-serif;
+  --font-display: "Space Grotesk", "Noto Sans TC", "PingFang TC", system-ui, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0d121b; --stage: #141b27; --ink: #e6ebf3; --muted: #9aa5b8; --line: #2a3446;
+    --accent: #7d9bff; --accent-soft: #1d2a4a; --bit: #f0b429; --bit-soft: #3a2e10;
+    --warn: #f08a6c; --warn-soft: #3d2019;
+    --seg1: #7d9bff; --seg2: #5fb0f0; --seg3: #f0b429; --seg4: #6d778a;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #0d121b; --stage: #141b27; --ink: #e6ebf3; --muted: #9aa5b8; --line: #2a3446;
+  --accent: #7d9bff; --accent-soft: #1d2a4a; --bit: #f0b429; --bit-soft: #3a2e10;
+  --warn: #f08a6c; --warn-soft: #3d2019;
+  --seg1: #7d9bff; --seg2: #5fb0f0; --seg3: #f0b429; --seg4: #6d778a;
+  color-scheme: dark;
+}
+html, body { height: 100%; }
+body { background: var(--bg); color: var(--ink); font-family: var(--font-body); margin: 0; }
+.mono { font-family: var(--font-mono); }
+code { font-family: var(--font-mono); background: var(--bit-soft); color: var(--ink); padding: 0 .3em; border-radius: 4px; font-size: .92em; }
+
+/* ---------- stage (desktop) ---------- */
+.viewport { position: fixed; inset: 0; display: grid; place-items: center; overflow: hidden;
+  padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px));
+  padding-block: calc(16px + env(safe-area-inset-top, 0px)) calc(64px + env(safe-area-inset-bottom, 0px)); }
+.deck { width: 1280px; height: 720px; position: relative; transform-origin: center center; }
+.slide { position: absolute; inset: 0; background: var(--stage); border: 1px solid var(--line); border-radius: 14px;
+  box-shadow: 0 20px 50px -30px rgba(20, 32, 51, .45); display: flex; flex-direction: column; overflow: hidden; }
+.slide:not(.active) { display: none; }
+.slide-body { flex: 1; min-height: 0; padding: 52px 72px 20px; display: flex; flex-direction: column; gap: 22px; overflow: hidden; }
+.slide-foot { display: flex; justify-content: space-between; gap: 16px; padding: 12px 72px 16px; color: var(--muted); font-size: 14px; border-top: 1px solid var(--line); }
+
+.title { font-family: var(--font-display); font-weight: 700; font-size: 40px; line-height: 1.2; margin: 0; text-wrap: balance; letter-spacing: -.01em; }
+.title::before { content: ""; display: block; width: 56px; height: 6px; margin-bottom: 18px;
+  background: repeating-linear-gradient(90deg, var(--accent) 0 8px, transparent 8px 12px, var(--bit) 12px 20px, transparent 20px 24px); }
+.items { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 16px; font-size: 25px; line-height: 1.55; }
+.items li { display: block; position: relative; padding-left: 30px; }
+.items li.claim::before { content: ""; position: absolute; left: 4px; top: .62em; width: 10px; height: 10px; background: var(--accent); border-radius: 2px; }
+.items li.hint { padding: 12px 18px 12px 52px; background: var(--accent-soft); border-radius: 10px; }
+.items li.hint .hint-mark { position: absolute; left: 16px; top: 12px; }
+.items li.warn { padding: 10px 18px; background: var(--warn-soft); border-left: 4px solid var(--warn); border-radius: 0 10px 10px 0; }
+.refs { display: inline-flex; flex-wrap: wrap; gap: 6px; vertical-align: middle; margin-left: 4px; }
+.ref { font-family: var(--font-mono); font-size: 13px; line-height: 1; padding: 4px 7px; border-radius: 999px; color: var(--accent);
+  border: 1px solid var(--accent); background: transparent; cursor: help; position: relative; white-space: nowrap; }
+.ref:hover::after, .ref:focus::after { content: attr(data-tip); position: absolute; left: 0; bottom: calc(100% + 8px); z-index: 5;
+  width: 420px; white-space: normal; font-family: var(--font-body); font-size: 15px; line-height: 1.5; color: var(--ink);
+  background: var(--stage); border: 1px solid var(--line); border-radius: 8px; padding: 10px 12px; box-shadow: 0 10px 30px -12px rgba(0,0,0,.35); }
+.ref:focus { outline: 2px solid var(--bit); outline-offset: 2px; }
+
+/* cover */
+.layout-cover .slide-body { justify-content: center; gap: 18px; padding-inline: 96px; }
+.eyebrow { color: var(--bit); letter-spacing: .12em; font-size: 16px; margin: 0; }
+.cover-title { font-family: var(--font-display); font-weight: 700; font-size: 72px; line-height: 1.1; margin: 0; letter-spacing: -.02em; text-wrap: balance; }
+.sub { color: var(--muted); font-size: 26px; margin: 0; }
+.sub.small { font-size: 16px; }
+.cover-items { font-size: 24px; max-width: 900px; }
+
+/* split layouts */
+.split { display: grid; grid-template-columns: 1fr 1fr; gap: 36px; flex: 1; min-height: 0; }
+.split .col { min-width: 0; display: flex; flex-direction: column; gap: 16px; }
+.split .items { font-size: 22px; gap: 12px; }
+.widget { margin: 0; background: var(--bg); border: 1px solid var(--line); border-radius: 12px; padding: 16px; display: flex; flex-direction: column; gap: 12px; flex: 1; min-height: 0; }
+.widget svg { width: 100%; height: auto; display: block; }
+.widget .controls { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+.widget button { font: 600 15px var(--font-body); color: var(--stage); background: var(--accent); border: 0; border-radius: 8px; padding: 8px 14px; cursor: pointer; }
+.widget button:disabled { opacity: .35; cursor: default; }
+.widget button:focus-visible { outline: 3px solid var(--bit); outline-offset: 2px; }
+.widget .caption { font-size: 16px; color: var(--muted); line-height: 1.5; min-height: 3em; }
+.widget .caption b { color: var(--ink); }
+
+/* table */
+.table-wrap { overflow-x: auto; }
+table { border-collapse: collapse; width: 100%; font-size: 21px; }
+th, td { text-align: left; padding: 12px 14px; border-bottom: 1px solid var(--line); vertical-align: top; }
+th { font-family: var(--font-display); font-size: 17px; color: var(--muted); letter-spacing: .04em; }
+td:first-child { font-weight: 700; white-space: nowrap; }
+.refcell { width: 1%; white-space: nowrap; }
+.layout-table .items { font-size: 22px; }
+.refs-table { font-size: 15px; }
+.refs-table th, .refs-table td { padding: 7px 10px; }
+.layout-refs .slide-body { gap: 14px; }
+.refs-table td:first-child { font-weight: 400; color: var(--accent); }
+.refs-table a { color: var(--accent); }
+
+/* quiz */
+.quizzes { display: flex; flex-direction: column; gap: 10px; }
+.quiz-label { margin: 0; font-size: 15px; color: var(--bit); font-family: var(--font-mono); letter-spacing: .08em; }
+.quiz { border: 1px solid var(--line); border-radius: 10px; padding: 10px 16px; font-size: 21px; background: var(--bg); }
+.quiz summary { cursor: pointer; font-weight: 500; }
+.quiz p { margin: 8px 0 0; color: var(--accent); font-weight: 700; }
+.layout-quiz .items { font-size: 21px; gap: 10px; }
+.layout-quiz .slide-body { gap: 16px; }
+
+/* nav */
+.nav { position: fixed; left: 0; right: 0; bottom: 0; display: flex; justify-content: center; align-items: center; gap: 14px;
+  padding: 10px max(16px, env(safe-area-inset-right, 0px)) calc(12px + env(safe-area-inset-bottom, 0px)) max(16px, env(safe-area-inset-left, 0px)); }
+.nav button { font: 600 15px var(--font-body); color: var(--ink); background: var(--stage); border: 1px solid var(--line); border-radius: 999px; padding: 8px 18px; cursor: pointer; }
+.nav button:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
+.nav .count { font-family: var(--font-mono); color: var(--muted); font-size: 14px; min-width: 70px; text-align: center; }
+.progress { position: fixed; left: 0; top: env(safe-area-inset-top, 0px); height: 4px; background: var(--accent); transition: width .25s; }
+
+/* ---------- phone: stacked, scrolling ---------- */
+@media (max-width: 760px) {
+  .viewport { position: static; display: block; overflow: visible; padding-block: 16px 24px; }
+  .deck { width: 100%; max-width: 100%; height: auto; transform: none !important; display: flex; flex-direction: column; gap: 16px; }
+  .slide, .slide:not(.active) { position: static; display: flex; min-width: 0; max-width: 100%; }
+  .refcell, td:first-child, .ref { white-space: normal; }
+  .slide-body { padding: 24px 20px 12px; overflow: visible; }
+  .slide-foot { padding: 10px 20px 12px; flex-wrap: wrap; font-size: 12px; }
+  .title { font-size: 26px; }
+  .cover-title { font-size: 40px; }
+  .layout-cover .slide-body { padding-inline: 20px; }
+  .items, .split .items, .layout-quiz .items, .layout-table .items, .cover-items { font-size: 17px; }
+  .sub { font-size: 18px; }
+  .split { grid-template-columns: 1fr; }
+  table { font-size: 15px; }
+  .quiz { font-size: 16px; }
+  .ref:hover::after, .ref:focus::after { width: 240px; }
+  .nav, .progress { display: none; }
+}
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; animation: none !important; } }
+</style>
+
+<div class="progress" id="progress"></div>
+<main class="viewport" id="viewport">
+  <div class="deck" id="deck">
+<section class="slide layout-cover" id="s1" data-draft="01" aria-label="第 1 頁：用更少的 bit 說同一件事"><div class="slide-body"><p class="eyebrow mono">0100 1000 · 0101 0101 · 0100 0110</p><h1 class="cover-title">用更少的 bit 說同一件事</h1><p class="sub">Huffman 編碼與算術編碼入門</p><ul class="items cover-items"><li class="claim"><span>資料壓縮：用比原始表示法更少的位元，來編碼同樣的資訊。</span> <span class="refs"><span class="ref" tabindex="0" data-tip="wiki/data-compression.md C1：資料壓縮又稱為信源編碼（source coding），是用比原始表示法更少的位元來編碼資訊。">data-compression C1</span></span></li></ul><p class="sub">臺科大電機所 李威漢｜內容全部取自本人的 LLM Wiki</p></div><footer class="slide-foot"><span class="mono">📚 出處：wiki/data-compression</span><span class="mono">01 / 15</span></footer></section>
+<section class="slide layout-bullets" id="s2" data-draft="02" aria-label="第 2 頁：今天的路線圖"><div class="slide-body"><h2 class="title">今天的路線圖</h2><ul class="items"><li class="hint"><span class="hint-mark" aria-hidden="true">💡</span><span>① 為什麼「常見的東西用短碼」就能壓縮？壓縮的極限在哪裡？</span></li><li class="hint"><span class="hint-mark" aria-hidden="true">💡</span><span>② Huffman 編碼怎麼建樹、怎麼解碼？</span></li><li class="hint"><span class="hint-mark" aria-hidden="true">💡</span><span>③ 算術編碼跟 Huffman 差在哪？為什麼 Huffman 還是到處都是？</span></li><li class="hint"><span class="hint-mark" aria-hidden="true">💡</span><span>路線：為什麼壓縮 → 熵（極限）→ 前綴碼（規則）→ Shannon–Fano → Huffman → 算術編碼 → 比較</span></li></ul></div><footer class="slide-foot"><span class="mono">📚 出處：導覽頁（無事實主張）</span><span class="mono">02 / 15</span></footer></section>
+<section class="slide layout-bullets" id="s3" data-draft="03" aria-label="第 3 頁：壓縮是什麼？無失真 vs 失真"><div class="slide-body"><h2 class="title">壓縮是什麼？無失真 vs 失真</h2><ul class="items"><li class="hint"><span class="hint-mark" aria-hidden="true">💡</span><span>bit（位元）是最小的資訊單位，就是一個「零或一」。</span></li><li class="claim"><span>資料壓縮（又稱信源編碼）：用比原始表示法更少的位元來編碼資訊；壓縮的叫編碼器，還原的叫解碼器。</span> <span class="refs"><span class="ref" tabindex="0" data-tip="wiki/data-compression.md C1：資料壓縮又稱為信源編碼（source coding），是用比原始表示法更少的位元來編碼資訊。">data-compression C1</span><span class="ref" tabindex="0" data-tip="wiki/data-compression.md C2：負責壓縮的叫編碼器（encoder），負責還原的叫解碼器（decoder）。">data-compression C2</span></span></li><li class="claim"><span>無失真（lossless）：移除統計上的冗餘（重複、可預測的部分），原始資料可以完整還原。</span> <span class="refs"><span class="ref" tabindex="0" data-tip="wiki/lossless-vs-lossy.md C1：原理是移除「統計上的冗餘」，因此原始資料可以完整還原。">lossless-vs-lossy C1</span></span></li><li class="claim"><span>失真（lossy）：丟掉較不重要的資訊換取更小的檔案，例如 JPEG 利用人眼對亮度比對顏色敏感。</span> <span class="refs"><span class="ref" tabindex="0" data-tip="wiki/lossless-vs-lossy.md C5：丟掉被判斷為不必要或較不重要的資訊，用一些保真度換取更小的檔案。">lossless-vs-lossy C5</span><span class="ref" tabindex="0" data-tip="wiki/lossless-vs-lossy.md C6：例：人眼對亮度比對顏色敏感，所以 JPEG 會捨去觀看者不易察覺的細節。">lossless-vs-lossy C6</span></span></li><li class="claim"><span>今天的主角 Huffman 與算術編碼，都用於無失真壓縮。</span> <span class="refs"><span class="ref" tabindex="0" data-tip="wiki/lossless-vs-lossy.md C7：本 wiki 的主角 Huffman 與算術編碼都用於無失真壓縮。">lossless-vs-lossy C7</span></span></li></ul></div><footer class="slide-foot"><span class="mono">📚 出處：wiki/data-compression、wiki/lossless-vs-lossy</span><span class="mono">03 / 15</span></footer></section>
+<section class="slide layout-bullets" id="s4" data-draft="04" aria-label="第 4 頁：熵：資料「有多難猜」"><div class="slide-body"><h2 class="title">熵：資料「有多難猜」</h2><ul class="items"><li class="claim"><span>熵（entropy）衡量一個隨機結果的平均不確定性——越難猜，熵越高。</span> <span class="refs"><span class="ref" tabindex="0" data-tip="wiki/entropy.md C1：隨機變數的熵，衡量其可能結果的平均不確定性（或資訊量）。">entropy C1</span></span></li><li class="claim"><span>公平硬幣（p = 1/2）最難猜：熵是 1 bit；永遠出同一面的硬幣：熵是零。</span> <span class="refs"><span class="ref" tabindex="0" data-tip="wiki/entropy.md C6：公平硬幣（p = 1/2）最難猜，熵是 1 bit（one bit）。">entropy C6</span><span class="ref" tabindex="0" data-tip="wiki/entropy.md C7：永遠出同一面的硬幣沒有不確定性，熵是零（zero）。">entropy C7</span></span></li><li class="claim"><span>越不可能發生的事帶來越多資訊；「這張彩券不會中」幾乎沒告訴你什麼。</span> <span class="refs"><span class="ref" tabindex="0" data-tip="wiki/entropy.md C4：越可能發生的事帶來的資訊越少，越不可能的事帶來的資訊越多；例如「這張彩券不會中」幾乎沒告訴你什麼。">entropy C4</span></span></li><li class="claim"><span>為什麼能壓縮？A、B、C、D 四個字母機率相同時，每個要兩個 bits；機率不均時，常見的給短碼、少見的給長碼，平均就更少。</span> <span class="refs"><span class="ref" tabindex="0" data-tip="wiki/entropy.md C10：四個字母 A、B、C、D 機率相同時，每個字母需要兩個 bits（two bits）；機率不均時，用長短不一的碼就能平均更少。">entropy C10</span></span></li></ul></div><footer class="slide-foot"><span class="mono">📚 出處：wiki/entropy</span><span class="mono">04 / 15</span></footer></section>
+<section class="slide layout-bullets" id="s5" data-draft="05" aria-label="第 5 頁：壓縮的地板：信源編碼定理"><div class="slide-body"><h2 class="title">壓縮的地板：信源編碼定理</h2><ul class="items"><li class="claim"><span>Shannon 的信源編碼定理，訂出了資料壓縮在統計上的極限（適用於符號彼此獨立、同分布的來源）。</span> <span class="refs"><span class="ref" tabindex="0" data-tip="wiki/source-coding-theorem.md C1：又稱無雜訊編碼定理（noiseless coding theorem），它訂出了資料壓縮在統計上的極限。">source-coding-theorem C1</span><span class="ref" tabindex="0" data-tip="wiki/source-coding-theorem.md C2：適用對象：每個符號彼此獨立、同分布（i.i.d.）的資料來源。">source-coding-theorem C2</span></span></li><li class="claim"><span>壓到低於熵，幾乎一定會遺失資訊；但可以做到「任意接近熵」。</span> <span class="refs"><span class="ref" tabindex="0" data-tip="wiki/source-coding-theorem.md C3：壓到低於熵，幾乎一定會遺失資訊；但可以做到「任意接近熵」而幾乎不遺失。">source-coding-theorem C3</span></span></li><li class="claim"><span>例：英文文字的熵約為每字元 0.6 到 1.3 bits，所以英文很好壓縮。</span> <span class="refs"><span class="ref" tabindex="0" data-tip="wiki/entropy.md C11：英文文字的熵約為每字元 0.6 到 1.3 bits，所以英文很好壓縮。">entropy C11</span></span></li><li class="hint"><span class="hint-mark" aria-hidden="true">💡</span><span>熵就像一道地板：接下來每個方法，都在比「平均碼長（每個符號平均用幾個 bit）」離地板多近。</span></li></ul></div><footer class="slide-foot"><span class="mono">📚 出處：wiki/source-coding-theorem、wiki/entropy</span><span class="mono">05 / 15</span></footer></section>
+<section class="slide layout-bullets" id="s6" data-draft="06" aria-label="第 6 頁：規則：前綴碼（prefix code）"><div class="slide-body"><h2 class="title">規則：前綴碼（prefix code）</h2><ul class="items"><li class="hint"><span class="hint-mark" aria-hidden="true">💡</span><span>碼字（codeword）＝分配給某個符號的那串 bit。</span></li><li class="claim"><span>前綴碼：沒有任何碼字是另一個碼字的開頭，所以解碼不會有歧義。</span> <span class="refs"><span class="ref" tabindex="0" data-tip="wiki/prefix-code.md C1：前綴碼：沒有任何碼字（codeword）是另一個碼字的前綴，所以解碼不會有歧義。">prefix-code C1</span></span></li><li class="hint"><span class="hint-mark" aria-hidden="true">💡</span><span>例：A=<code>0</code>、B=<code>10</code>、C=<code>11</code>，收到 <code>01011</code> 只能切成 <code>0｜10｜11</code> → A B C。</span></li><li class="hint"><span class="hint-mark" aria-hidden="true">💡</span><span>反例：A=<code>0</code>、B=<code>01</code>、C=<code>10</code>，收到 <code>010</code> 可以是「A C」，也可以是「B A」——分不清。</span></li><li class="claim"><span>前綴碼的平均碼長，理論下限就是熵。</span> <span class="refs"><span class="ref" tabindex="0" data-tip="wiki/prefix-code.md C4：平均碼長的理論下限就是 entropy。">prefix-code C4</span></span></li></ul></div><footer class="slide-foot"><span class="mono">📚 出處：wiki/prefix-code</span><span class="mono">06 / 15</span></footer></section>
+<section class="slide layout-bullets" id="s7" data-draft="07" aria-label="第 7 頁：第一次嘗試：Shannon–Fano「由上往下切」"><div class="slide-body"><h2 class="title">第一次嘗試：Shannon–Fano「由上往下切」</h2><ul class="items"><li class="claim"><span>以 Shannon 和 Fano 命名，其實是兩個同名演算法：Shannon 的方法（1948）和 Fano 的方法（1949）。</span> <span class="refs"><span class="ref" tabindex="0" data-tip="wiki/shannon-fano.md C1：以 Claude Shannon 和 Robert Fano 命名，用符號的機率建出一套前綴碼（prefix code）。">shannon-fano C1</span><span class="ref" tabindex="0" data-tip="wiki/shannon-fano.md C2：其實有兩種不同演算法共用這個名字：Shannon 的方法（1948）和 Fano 的方法（1949）。">shannon-fano C2</span></span></li><li class="claim"><span>Fano 的做法：依機率排序，切成總機率差不多的兩組，一組加 0、一組加 1，重複到每組只剩一個符號。</span> <span class="refs"><span class="ref" tabindex="0" data-tip="wiki/shannon-fano.md C4：把符號依機率由大到小排序，切成兩組、讓兩組總機率盡量接近；第一組加「0」、第二組加「1」，再對每組重複，直到每個符號單獨一組。">shannon-fano C4</span></span></li><li class="claim"><span>保證平均碼長與最佳值相差在一個 bit 以內，但不保證最短。</span> <span class="refs"><span class="ref" tabindex="0" data-tip="wiki/shannon-fano.md C3：它們產生的碼「不一定最好」：平均碼長與最佳值相差在一個 bit 以內（within one bit），但不保證最短；Huffman 編碼才保證。">shannon-fano C3</span></span></li><li class="hint"><span class="hint-mark" aria-hidden="true">💡</span><span>那「保證平均碼長最短」的方法是誰找到的？</span></li></ul></div><footer class="slide-foot"><span class="mono">📚 出處：wiki/shannon-fano</span><span class="mono">07 / 15</span></footer></section>
+<section class="slide layout-bullets" id="s8" data-draft="08" aria-label="第 8 頁：Huffman 的故事：一份期末報告"><div class="slide-body"><h2 class="title">Huffman 的故事：一份期末報告</h2><ul class="items"><li class="claim"><span>1951 年，Huffman 修 Fano 的資訊理論課，選擇寫期末報告代替期末考，題目是「找出最有效率的二進位碼」。</span> <span class="refs"><span class="ref" tabindex="0" data-tip="wiki/huffman-coding.md C3：1951 年 Huffman 修 Robert M. Fano 的資訊理論課，老師讓學生在「期末報告」和「期末考」二選一，他選了報告，題目是找出最有效率的二進位碼。">huffman-coding C3</span></span></li><li class="claim"><span>他改成「由下往上」建樹，和由上往下的 Shannon–Fano 不同，而且保證最佳。</span> <span class="refs"><span class="ref" tabindex="0" data-tip="wiki/huffman-coding.md C5：和由上而下的 shannon-fano 不同，由下而上建樹保證最佳。">huffman-coding C5</span></span></li><li class="claim"><span>這個方法在 1952 年發表。</span> <span class="refs"><span class="ref" tabindex="0" data-tip="wiki/huffman-coding.md C2：由 David A. Huffman 在 MIT 讀博士（Sc.D.）時提出，1952 年發表。">huffman-coding C2</span></span></li><li class="warn"><span>⚠ 來源不一致：〈Data compression〉條目寫 Huffman 編碼「developed in 1950」，wiki 兩說並列。</span> <span class="refs"><span class="ref" tabindex="0" data-tip="wiki/huffman-coding.md C6：⚠ 矛盾：Huffman 編碼的年代，Wikipedia〈Huffman coding〉說 1951 年修課時提出、1952 年發表  ；〈Data compression〉則寫「developed in 1950」。">huffman-coding C6</span></span></li></ul></div><footer class="slide-foot"><span class="mono">📚 出處：wiki/huffman-coding</span><span class="mono">08 / 15</span></footer></section>
+<section class="slide layout-tree" id="s9" data-draft="09" aria-label="第 9 頁：Huffman 三步驟（按「下一步」看建樹）"><div class="slide-body"><h2 class="title">Huffman 三步驟（按「下一步」看建樹）</h2><div class="split"><div class="col"><ul class="items"><li class="claim"><span>① 建樹：每個符號先是一片葉子，權重＝出現頻率；反覆把「權重最小的兩個節點」合併，直到只剩一個根。</span> <span class="refs"><span class="ref" tabindex="0" data-tip="wiki/huffman-coding.md C7：① 建樹：每個符號先是一片葉子，權重＝出現頻率；反覆把「權重最小的兩個節點」合併成一個新節點（權重相加），直到只剩一個根。">huffman-coding C7</span></span></li><li class="claim"><span>② 產碼：從根往下，左邊標 0、右邊標 1，路徑就是碼字。</span> <span class="refs"><span class="ref" tabindex="0" data-tip="wiki/huffman-coding.md C8：② 產生碼字：從根往下走，左邊標 0、右邊標 1；走到某片葉子的路徑就是那個符號的碼。">huffman-coding C8</span></span></li><li class="claim"><span>③ 解碼：沿著樹一個一個讀 bit，走到葉子就輸出一個符號；解碼端必須拿到同一棵樹。</span> <span class="refs"><span class="ref" tabindex="0" data-tip="wiki/huffman-coding.md C9：③ 解碼：一個一個讀 bit、沿著樹往下走，走到葉子就輸出一個符號；所以解碼端必須拿到同一棵樹或頻率表。">huffman-coding C9</span></span></li><li class="hint"><span class="hint-mark" aria-hidden="true">💡</span><span>練習：收到 <code>01011</code>，先走到 <code>010</code> 是 a，再走到 <code>11</code> 是 c。</span></li></ul></div><div class="col"><figure class="widget" data-widget="tree" data-params='{&quot;a&quot;: &quot;0.10&quot;, &quot;b&quot;: &quot;0.15&quot;, &quot;c&quot;: &quot;0.30&quot;, &quot;d&quot;: &quot;0.16&quot;, &quot;e&quot;: &quot;0.29&quot;, &quot;cards&quot;: &quot;huffman-coding#C11,C12,C13,C14,C15&quot;}'></figure></div></div></div><footer class="slide-foot"><span class="mono">📚 出處：wiki/huffman-coding</span><span class="mono">09 / 15</span></footer></section>
+<section class="slide layout-bars" id="s10" data-draft="10" aria-label="第 10 頁：成績單：離熵多近？"><div class="slide-body"><h2 class="title">成績單：離熵多近？</h2><div class="split"><div class="col"><ul class="items"><li class="claim"><span>例一（a–e）：Huffman 平均碼長 2.25 bits，熵約 2.205 bits，非常接近極限。</span> <span class="refs"><span class="ref" tabindex="0" data-tip="wiki/huffman-coding.md C16：平均碼長 2.25 bits／符號，熵約 2.205 bits，已非常接近理論極限。">huffman-coding C16</span></span></li><li class="claim"><span>例二（另一組 A–E）：Shannon 2.62、Fano 2.28 bits。</span> <span class="refs"><span class="ref" tabindex="0" data-tip="wiki/shannon-fano.md C12：Fano 平均碼長約 2.28 bits；Shannon 的方法是 2.62 bits。">shannon-fano C12</span></span></li><li class="claim"><span>例二的 Huffman 約 2.23 bits（依來源碼長自行計算），三者最短。</span> <span class="refs"><span class="ref" tabindex="0" data-tip="wiki/shannon-fano.md C13：Huffman 平均碼長約 2.23 bits，三者中最短。（計算值）">shannon-fano C13</span></span></li></ul></div><div class="col"><figure class="widget" data-widget="bars" data-params='{&quot;Shannon&quot;: &quot;2.62&quot;, &quot;Fano&quot;: &quot;2.28&quot;, &quot;Huffman&quot;: &quot;2.23&quot;, &quot;cards&quot;: &quot;shannon-fano#C12,C13&quot;}'></figure></div></div></div><footer class="slide-foot"><span class="mono">📚 出處：wiki/huffman-coding、wiki/shannon-fano</span><span class="mono">10 / 15</span></footer></section>
+<section class="slide layout-bullets" id="s11" data-draft="11" aria-label="第 11 頁：Huffman 的天花板：只能用「整數個」bit"><div class="slide-body"><h2 class="title">Huffman 的天花板：只能用「整數個」bit</h2><ul class="items"><li class="claim"><span>Huffman 給每個符號的碼長都是整數個 bit，這限制了它的效率。</span> <span class="refs"><span class="ref" tabindex="0" data-tip="wiki/huffman-vs-arithmetic.md C1：Huffman 給每個符號的碼長都是整數個 bit，這限制了它的效率。">huffman-vs-arithmetic C1</span></span></li><li class="claim"><span>極端例子：兩個符號機率 0.95 和 0.05，單純的 Huffman 完全壓不了——每個符號還是要一個 bit。</span> <span class="refs"><span class="ref" tabindex="0" data-tip="wiki/huffman-vs-arithmetic.md C2：極端例子：兩個符號、機率 0.95 和 0.05 時，單純的 Huffman 完全壓不了，每個符號還是要一個 bit（one bit）。">huffman-vs-arithmetic C2</span></span></li><li class="claim"><span>機率剛好是 1/2 的次方時，Huffman 效率最高。</span> <span class="refs"><span class="ref" tabindex="0" data-tip="wiki/huffman-coding.md C18：機率剛好是 1/2 的次方時效率最高；符號種類很少時，浪費可能很明顯。">huffman-coding C18</span></span></li><li class="hint"><span class="hint-mark" aria-hidden="true">💡</span><span>也就是「二分之一、四分之一、八分之一……」這種機率。</span></li><li class="claim"><span>把符號綁成一塊可以改善，但要接近熵，塊會變得非常大。</span> <span class="refs"><span class="ref" tabindex="0" data-tip="wiki/huffman-vs-arithmetic.md C4：把符號綁成一塊可以改善，但要接近熵，塊會變得非常大；算術編碼不需要付這個代價就能逼近熵。">huffman-vs-arithmetic C4</span></span></li><li class="hint"><span class="hint-mark" aria-hidden="true">💡</span><span>如果能用「零點幾個 bit」編一個符號就好了……→ 算術編碼。</span></li></ul></div><footer class="slide-foot"><span class="mono">📚 出處：wiki/huffman-vs-arithmetic、wiki/huffman-coding</span><span class="mono">11 / 15</span></footer></section>
+<section class="slide layout-interval" id="s12" data-draft="12" aria-label="第 12 頁：算術編碼：把整則訊息縮成一個小數"><div class="slide-body"><h2 class="title">算術編碼：把整則訊息縮成一個小數</h2><div class="split"><div class="col"><ul class="items"><li class="claim"><span>不幫每個符號各發一個碼，而是把整則訊息編成 0 到 1 之間的一個小數。</span> <span class="refs"><span class="ref" tabindex="0" data-tip="wiki/arithmetic-coding.md C2：它不是把每個符號換成各自的碼，而是把整則訊息編成一個小數 q，0 ≤ q &lt; 1。">arithmetic-coding C2</span></span></li><li class="claim"><span>模型（預測各符號機率）：NEUTRAL 60%、POSITIVE 20%、NEGATIVE 10%、END-OF-DATA 10%。</span> <span class="refs"><span class="ref" tabindex="0" data-tip="wiki/arithmetic-coding.md C5：範例模型：NEUTRAL 60%、POSITIVE 20%、NEGATIVE 10%、END-OF-DATA 10%；END-OF-DATA 表示訊息結束。">arithmetic-coding C5</span></span></li><li class="claim"><span>每讀一個符號只留下對應的那一段（自行計算）：[0, 0.6) → [0.48, 0.54) → [0.534, 0.54)。</span> <span class="refs"><span class="ref" tabindex="0" data-tip="wiki/arithmetic-coding.md C6：編碼「NEUTRAL → NEGATIVE → END-OF-DATA」時，區間依序縮成 [0, 0.6) → [0.48, 0.54) → [0.534, 0.54)。（計算值）">arithmetic-coding C6</span></span></li><li class="claim"><span>傳 0.538 就夠：它在最終區間內，用同一模型就能解回這三個符號。</span> <span class="refs"><span class="ref" tabindex="0" data-tip="wiki/arithmetic-coding.md C7：來源的解碼範例：小數 0.538 依序解出 NEUTRAL、NEGATIVE、END-OF-DATA。">arithmetic-coding C7</span><span class="ref" tabindex="0" data-tip="wiki/arithmetic-coding.md C8：只要傳「足夠落在最終區間內」的位數就好；解碼端必須使用和編碼端相同的模型。">arithmetic-coding C8</span></span></li><li class="claim"><span>它能很接近熵，訊息越長越明顯。</span> <span class="refs"><span class="ref" tabindex="0" data-tip="wiki/arithmetic-coding.md C3：最好的成績由來源的熵決定，而算術編碼能很接近這個極限，訊息越長越明顯。">arithmetic-coding C3</span></span></li></ul></div><div class="col"><figure class="widget" data-widget="interval" data-params='{&quot;NEUTRAL&quot;: &quot;0.6&quot;, &quot;POSITIVE&quot;: &quot;0.2&quot;, &quot;NEGATIVE&quot;: &quot;0.1&quot;, &quot;END-OF-DATA&quot;: &quot;0.1&quot;, &quot;seq&quot;: &quot;NEUTRAL,NEGATIVE,END-OF-DATA&quot;, &quot;cards&quot;: &quot;arithmetic-coding#C5,C6&quot;}'></figure></div></div></div><footer class="slide-foot"><span class="mono">📚 出處：wiki/arithmetic-coding</span><span class="mono">12 / 15</span></footer></section>
+<section class="slide layout-table" id="s13" data-draft="13" aria-label="第 13 頁：怎麼選？Huffman vs 算術編碼"><div class="slide-body"><h2 class="title">怎麼選？Huffman vs 算術編碼</h2><div class="table-wrap"><table><thead><tr><th>面向</th><th>Huffman 編碼</th><th>算術編碼</th><th class="refcell">出處</th></tr></thead><tbody><tr><td>編碼單位</td><td>一個符號一個碼字</td><td>整則訊息一個小數</td><td class='refcell'><span class="refs"><span class="ref" tabindex="0" data-tip="wiki/huffman-vs-arithmetic.md C5：| 編碼單位 | 一個符號一個碼字  | 整則訊息一個小數  |">huffman-vs-arithmetic C5</span></span></td></tr><tr><td>速度</td><td>較快</td><td>（來源未比較原因）</td><td class='refcell'><span class="refs"><span class="ref" tabindex="0" data-tip="wiki/huffman-vs-arithmetic.md C7：| 速度 | 較快  | 來源只說 Huffman 較快，未說明原因  |">huffman-vs-arithmetic C7</span></span></td></tr><tr><td>專利</td><td>歷史上沒有專利問題</td><td>曾有許多專利，多已過期</td><td class='refcell'><span class="refs"><span class="ref" tabindex="0" data-tip="wiki/huffman-vs-arithmetic.md C8：| 專利 | 歷史上沒有專利問題  | 曾有許多專利，現多已過期  |">huffman-vs-arithmetic C8</span></span></td></tr><tr><td>應用</td><td>前綴碼用於 DEFLATE、JPEG、MP3</td><td>搭配機率模型的強力壓縮器</td><td class='refcell'><span class="refs"><span class="ref" tabindex="0" data-tip="wiki/huffman-vs-arithmetic.md C9：| 常見應用 | 前綴碼常用於 DEFLATE（gzip）、JPEG、MP3；JPEG 實作多用 Huffman   | 搭配機率模型的強力壓縮器  |">huffman-vs-arithmetic C9</span></span></td></tr></tbody></table></div><ul class="items"><li class="claim"><span>Huffman 為何仍常見？除了較快，專利顧慮曾讓 bzip2 放棄算術編碼，JPEG 實作多用 Huffman。</span> <span class="refs"><span class="ref" tabindex="0" data-tip="wiki/huffman-coding.md C20：算術編碼能更貼近真實機率，但 Huffman 比較快，歷史上也沒有專利問題。">huffman-coding C20</span><span class="ref" tabindex="0" data-tip="wiki/arithmetic-coding.md C12：許多相關技術曾被申請專利，現在大多已過期；專利顧慮曾讓 bzip2 放棄算術編碼，JPEG 實作也多半改用 Huffman。">arithmetic-coding C12</span></span></li></ul></div><footer class="slide-foot"><span class="mono">📚 出處：wiki/huffman-vs-arithmetic、wiki/huffman-coding、wiki/arithmetic-coding</span><span class="mono">13 / 15</span></footer></section>
+<section class="slide layout-quiz" id="s14" data-draft="14" aria-label="第 14 頁：重點回顧＋小測驗"><div class="slide-body"><h2 class="title">重點回顧＋小測驗</h2><ul class="items"><li class="claim"><span>熵是無失真壓縮的極限。</span> <span class="refs"><span class="ref" tabindex="0" data-tip="wiki/entropy.md C12：熵是無失真壓縮的極限，這就是 source-coding-theorem。">entropy C12</span></span></li><li class="claim"><span>Huffman：常見符號給短碼的最佳前綴碼，但碼長只能是整數個 bit。</span> <span class="refs"><span class="ref" tabindex="0" data-tip="wiki/huffman-coding.md C1：Huffman 碼是一種用於無失真壓縮的「最佳」prefix-code：越常出現的符號，給越短的位元串。">huffman-coding C1</span><span class="ref" tabindex="0" data-tip="wiki/huffman-vs-arithmetic.md C1：Huffman 給每個符號的碼長都是整數個 bit，這限制了它的效率。">huffman-vs-arithmetic C1</span></span></li><li class="claim"><span>算術編碼：把整則訊息編成一個小數。</span> <span class="refs"><span class="ref" tabindex="0" data-tip="wiki/arithmetic-coding.md C2：它不是把每個符號換成各自的碼，而是把整則訊息編成一個小數 q，0 ≤ q &lt; 1。">arithmetic-coding C2</span></span></li></ul><div class="quizzes"><p class="quiz-label">小測驗（點題目看答案）</p><details class="quiz"><summary>公平硬幣的熵是多少？</summary><p>1 bit。 <span class="refs"><span class="ref" tabindex="0" data-tip="wiki/entropy.md C6：公平硬幣（p = 1/2）最難猜，熵是 1 bit（one bit）。">entropy C6</span></span></p></details><details class="quiz"><summary>Huffman 建樹時，每次合併哪兩個節點？</summary><p>權重最小的兩個。 <span class="refs"><span class="ref" tabindex="0" data-tip="wiki/huffman-coding.md C7：① 建樹：每個符號先是一片葉子，權重＝出現頻率；反覆把「權重最小的兩個節點」合併成一個新節點（權重相加），直到只剩一個根。">huffman-coding C7</span></span></p></details><details class="quiz"><summary>機率 0.95 / 0.05 的兩個符號，Huffman 每個符號要幾個 bit？</summary><p>一個 bit，壓不了。 <span class="refs"><span class="ref" tabindex="0" data-tip="wiki/huffman-vs-arithmetic.md C2：極端例子：兩個符號、機率 0.95 和 0.05 時，單純的 Huffman 完全壓不了，每個符號還是要一個 bit（one bit）。">huffman-vs-arithmetic C2</span></span></p></details></div></div><footer class="slide-foot"><span class="mono">📚 出處：wiki/entropy、wiki/huffman-coding、wiki/huffman-vs-arithmetic、wiki/arithmetic-coding</span><span class="mono">14 / 15</span></footer></section>
+<section class="slide layout-refs" id="s15" data-draft="refs" aria-label="第 15 頁：參考來源"><div class="slide-body"><h2 class="title">參考來源：簡報 → Wiki → 原始條目</h2><div class="table-wrap"><table class="refs-table"><thead><tr><th>Wiki 頁</th><th>主題</th><th>原始來源（raw/，Wikipedia 英文條目，2026-11-12 擷取）</th></tr></thead><tbody><tr><td class='mono'>wiki/data-compression</td><td>資料壓縮（Data compression）</td><td><a href="https://en.wikipedia.org/wiki/Data_compression" target="_blank" rel="noopener">Data compression</a>、<a href="https://en.wikipedia.org/wiki/Entropy_(information_theory)" target="_blank" rel="noopener">Entropy (information theory)</a></td></tr><tr><td class='mono'>wiki/lossless-vs-lossy</td><td>無失真 vs 失真壓縮（Lossless vs Lossy）</td><td><a href="https://en.wikipedia.org/wiki/Data_compression" target="_blank" rel="noopener">Data compression</a>、<a href="https://en.wikipedia.org/wiki/Huffman_coding" target="_blank" rel="noopener">Huffman coding</a>、<a href="https://en.wikipedia.org/wiki/Arithmetic_coding" target="_blank" rel="noopener">Arithmetic coding</a></td></tr><tr><td class='mono'>wiki/entropy</td><td>熵（Entropy）</td><td><a href="https://en.wikipedia.org/wiki/Entropy_(information_theory)" target="_blank" rel="noopener">Entropy (information theory)</a></td></tr><tr><td class='mono'>wiki/source-coding-theorem</td><td>信源編碼定理（Shannon&#x27;s source coding theorem）</td><td><a href="https://en.wikipedia.org/wiki/Shannon%27s_source_coding_theorem" target="_blank" rel="noopener">Shannon&#x27;s source coding theorem</a></td></tr><tr><td class='mono'>wiki/prefix-code</td><td>前綴碼（Prefix code）</td><td><a href="https://en.wikipedia.org/wiki/Huffman_coding" target="_blank" rel="noopener">Huffman coding</a></td></tr><tr><td class='mono'>wiki/shannon-fano</td><td>Shannon–Fano 編碼（Shannon–Fano coding）</td><td><a href="https://en.wikipedia.org/wiki/Shannon%E2%80%93Fano_coding" target="_blank" rel="noopener">Shannon–Fano coding</a></td></tr><tr><td class='mono'>wiki/huffman-coding</td><td>Huffman 編碼（Huffman coding）</td><td><a href="https://en.wikipedia.org/wiki/Data_compression" target="_blank" rel="noopener">Data compression</a>、<a href="https://en.wikipedia.org/wiki/Huffman_coding" target="_blank" rel="noopener">Huffman coding</a></td></tr><tr><td class='mono'>wiki/huffman-vs-arithmetic</td><td>Huffman vs 算術編碼（比較頁）</td><td><a href="https://en.wikipedia.org/wiki/Data_compression" target="_blank" rel="noopener">Data compression</a>、<a href="https://en.wikipedia.org/wiki/Huffman_coding" target="_blank" rel="noopener">Huffman coding</a>、<a href="https://en.wikipedia.org/wiki/Arithmetic_coding" target="_blank" rel="noopener">Arithmetic coding</a></td></tr><tr><td class='mono'>wiki/arithmetic-coding</td><td>算術編碼（Arithmetic coding）</td><td><a href="https://en.wikipedia.org/wiki/Arithmetic_coding" target="_blank" rel="noopener">Arithmetic coding</a></td></tr></tbody></table></div><p class="sub small">每一句的出處標籤（如「entropy C6」）＝ 證據卡編號，滑過去可看 wiki 原句；證據卡再指回 raw 章節。</p></div><footer class="slide-foot"><span class="mono">📚 由 tools/render_deck.py 自動產生</span><span class="mono">15 / 15</span></footer></section>
+  </div>
+</main>
+<nav class="nav" aria-label="投影片導覽">
+  <button id="prev" type="button" aria-label="上一頁">← 上一頁</button>
+  <span class="count" id="count">1 / 1</span>
+  <button id="next" type="button" aria-label="下一頁">下一頁 →</button>
+</nav>
+
+<script>
+(() => {
+  const slides = [...document.querySelectorAll(".slide")];
+  const deck = document.getElementById("deck");
+  const count = document.getElementById("count");
+  const bar = document.getElementById("progress");
+  let cur = 0;
+  function fit() {
+    const vp = document.getElementById("viewport");
+    if (window.matchMedia("(max-width: 760px)").matches) { deck.style.transform = ""; return; }
+    const s = Math.min((vp.clientWidth - 32) / 1280, (vp.clientHeight - 80) / 720);
+    deck.style.transform = `scale(${Math.max(s, 0.2)})`;
+  }
+  function show(i) {
+    cur = Math.max(0, Math.min(slides.length - 1, i));
+    slides.forEach((s, k) => s.classList.toggle("active", k === cur));
+    count.textContent = `${cur + 1} / ${slides.length}`;
+    bar.style.width = `${((cur + 1) / slides.length) * 100}%`;
+    document.getElementById("prev").disabled = cur === 0;
+    document.getElementById("next").disabled = cur === slides.length - 1;
+    if (location.hash !== `#s${cur + 1}`) history.replaceState(null, "", `#s${cur + 1}`);
+  }
+  document.getElementById("prev").onclick = () => show(cur - 1);
+  document.getElementById("next").onclick = () => show(cur + 1);
+  document.addEventListener("keydown", (e) => {
+    if (e.target.closest && e.target.closest("button, summary, input")) { if (e.key !== "ArrowRight" && e.key !== "ArrowLeft") return; }
+    if (["ArrowRight", "PageDown", " "].includes(e.key)) { e.preventDefault(); show(cur + 1); }
+    if (["ArrowLeft", "PageUp"].includes(e.key)) { e.preventDefault(); show(cur - 1); }
+  });
+  window.addEventListener("resize", fit);
+  window.addEventListener("hashchange", () => { const m = location.hash.match(/^#s(\d+)$/); if (m) show(+m[1] - 1); });
+  const m = location.hash.match(/^#s(\d+)$/);
+  show(m ? +m[1] - 1 : 0);
+  fit();
+  window.__deck = { show, count: slides.length };
+
+  const NS = "http://www.w3.org/2000/svg";
+  const el = (tag, attrs = {}, text) => { const n = document.createElementNS(NS, tag); for (const k in attrs) n.setAttribute(k, attrs[k]); if (text != null) n.textContent = text; return n; };
+  const fmt = (x) => (+x.toFixed(3)).toString();
+  const css = (v) => `var(${v})`;
+
+  /* ---------- Huffman tree builder ---------- */
+  function huffman(fig, p) {
+    const leaves = Object.entries(p).filter(([k]) => k !== "cards").map(([k, v], i) => ({ label: k, w: +v, id: i }));
+    // run the algorithm: always merge the two lightest; the lighter one goes left (bit 0)
+    let forest = leaves.map((l) => ({ ...l }));
+    const merges = [];
+    let nid = leaves.length;
+    while (forest.length > 1) {
+      forest.sort((a, b) => a.w - b.w || a.id - b.id);
+      const [l, r] = forest.splice(0, 2);
+      const node = { id: nid++, w: +(l.w + r.w).toFixed(2), left: l, right: r, step: merges.length + 1 };
+      merges.push(node); forest.push(node);
+    }
+    const root = forest[0];
+    // codes
+    const codes = {};
+    (function walk(n, c) { if (!n.left) { codes[n.label] = c; return; } walk(n.left, c + "0"); walk(n.right, c + "1"); })(root, "");
+    window.__huffmanCodes = codes;
+    // layout: leaf x by in-order position, depth by y
+    let k = 0; const pos = {};
+    (function lay(n, d) { if (!n.left) { pos[n.id] = { x: k++, d }; return; } lay(n.left, d + 1); lay(n.right, d + 1); pos[n.id] = { x: (pos[n.left.id].x + pos[n.right.id].x) / 2, d }; })(root, 0);
+    const W = 520, H = 330, padX = 50, top = 34, dy = 74;
+    const X = (x) => padX + x * ((W - 2 * padX) / (leaves.length - 1));
+    const Y = (d) => top + d * dy;
+    const svg = el("svg", { viewBox: `0 0 ${W} ${H}`, role: "img", "aria-label": "Huffman 建樹過程" });
+    const caption = document.createElement("p"); caption.className = "caption";
+    const controls = document.createElement("div"); controls.className = "controls";
+    const back = document.createElement("button"); back.type = "button"; back.textContent = "← 上一步";
+    const fwd = document.createElement("button"); fwd.type = "button"; fwd.textContent = "下一步 →";
+    const stepLbl = document.createElement("span"); stepLbl.className = "mono"; stepLbl.style.color = css("--muted");
+    controls.append(back, fwd, stepLbl);
+    fig.append(svg, controls, caption);
+    let step = 0;
+    function draw() {
+      svg.replaceChildren();
+      const visible = (n) => !n.left || n.step <= step;
+      const all = [];
+      (function collect(n) { all.push(n); if (n.left) { collect(n.left); collect(n.right); } })(root);
+      for (const n of all) if (n.left && visible(n)) {
+        for (const [c, bit] of [[n.left, "0"], [n.right, "1"]]) {
+          svg.append(el("line", { x1: X(pos[n.id].x), y1: Y(pos[n.id].d), x2: X(pos[c.id].x), y2: Y(pos[c.id].d), stroke: css("--line"), "stroke-width": 3 }));
+          const mx = (X(pos[n.id].x) + X(pos[c.id].x)) / 2, my = (Y(pos[n.id].d) + Y(pos[c.id].d)) / 2;
+          svg.append(el("text", { x: mx + (bit === "0" ? -12 : 12), y: my, "text-anchor": "middle", "font-size": 15, "font-family": "JetBrains Mono, monospace", fill: css("--bit"), "font-weight": 700 }, bit));
+        }
+      }
+      for (const n of all) if (visible(n)) {
+        const isNew = n.left && n.step === step;
+        const cx = X(pos[n.id].x), cy = Y(pos[n.id].d);
+        svg.append(el("circle", { cx, cy, r: 22, fill: n.left ? (isNew ? css("--bit-soft") : css("--stage")) : css("--accent-soft"), stroke: isNew ? css("--bit") : css("--accent"), "stroke-width": isNew ? 3 : 2 }));
+        svg.append(el("text", { x: cx, y: cy + 5, "text-anchor": "middle", "font-size": 13, "font-family": "JetBrains Mono, monospace", fill: css("--ink") }, n.w.toFixed(2)));
+        if (!n.left) {
+          svg.append(el("text", { x: cx, y: cy - 30, "text-anchor": "middle", "font-size": 17, "font-weight": 700, fill: css("--ink") }, n.label));
+          if (step === merges.length) svg.append(el("text", { x: cx, y: cy + 42, "text-anchor": "middle", "font-size": 16, "font-weight": 700, "font-family": "JetBrains Mono, monospace", fill: css("--bit") }, codes[n.label]));
+        }
+      }
+      stepLbl.textContent = `步驟 ${step} / ${merges.length}`;
+      back.disabled = step === 0; fwd.disabled = step === merges.length;
+      if (step === 0) caption.innerHTML = "一開始：每個符號是一片葉子，圈內是它的權重（出現機率）。";
+      else if (step < merges.length) { const m = merges[step - 1]; caption.innerHTML = `合併目前最小的兩個：<b>${m.left.w.toFixed(2)}</b> + <b>${m.right.w.toFixed(2)}</b> = <b>${m.w.toFixed(2)}</b>`; }
+      else caption.innerHTML = `完成！從根往下：左 0、右 1。碼字：${leaves.map((l) => `<b>${l.label}</b>=<code>${codes[l.label]}</code>`).join("　")}`;
+    }
+    back.onclick = () => { step--; draw(); };
+    fwd.onclick = () => { step++; draw(); };
+    fig.__finish = () => { step = merges.length; draw(); };
+    draw();
+  }
+
+  /* ---------- arithmetic coding intervals ---------- */
+  function intervals(fig, p) {
+    const syms = Object.entries(p).filter(([k]) => !["seq", "cards"].includes(k)).map(([k, v]) => [k, +v]);
+    const seq = p.seq.split(",");
+    const colors = ["--seg1", "--seg2", "--seg3", "--seg4"];
+    const rows = [];
+    let lo = 0, hi = 1;
+    for (const s of seq) {
+      const parts = []; let start = lo;
+      for (const [name, prob] of syms) { const w = (hi - lo) * prob; parts.push({ name, a: start, b: start + w }); start += w; }
+      const pick = parts.find((q) => q.name === s);
+      rows.push({ lo, hi, parts, pick: s });
+      lo = pick.a; hi = pick.b;
+    }
+    window.__intervals = rows.map((r) => [fmt(r.parts.find((q) => q.name === r.pick).a), fmt(r.parts.find((q) => q.name === r.pick).b)]);
+    const W = 520, rowH = 82, H = 26 + rowH * rows.length + 30, L = 20, R = W - 20;
+    const svg = el("svg", { viewBox: `0 0 ${W} ${H}`, role: "img", "aria-label": "算術編碼區間縮小過程" });
+    const caption = document.createElement("p"); caption.className = "caption";
+    const controls = document.createElement("div"); controls.className = "controls";
+    const back = document.createElement("button"); back.type = "button"; back.textContent = "← 上一步";
+    const fwd = document.createElement("button"); fwd.type = "button"; fwd.textContent = "讀下一個符號 →";
+    controls.append(back, fwd);
+    fig.append(svg, controls, caption);
+    let step = 0;
+    const short = { "NEUTRAL": "NEU", "POSITIVE": "POS", "NEGATIVE": "NEG", "END-OF-DATA": "END" };
+    function draw() {
+      svg.replaceChildren();
+      rows.forEach((r, i) => {
+        if (i > step) return;
+        const y = 20 + i * rowH;
+        const sx = (v) => L + (v - r.lo) / (r.hi - r.lo) * (R - L);
+        svg.append(el("text", { x: L, y: y, "font-size": 13, "font-family": "JetBrains Mono, monospace", fill: css("--muted") }, `[${fmt(r.lo)}, ${fmt(r.hi)})`));
+        r.parts.forEach((q, j) => {
+          const chosen = q.name === r.pick && i < step + 1;
+          const x0 = sx(q.a), x1 = sx(q.b);
+          svg.append(el("rect", { x: x0, y: y + 8, width: Math.max(x1 - x0 - 2, 1), height: 34, rx: 4, fill: css(colors[j]), opacity: (i < step || (i === step && step === rows.length)) ? (q.name === r.pick ? 1 : .22) : .85 }));
+          if (x1 - x0 > 34) svg.append(el("text", { x: (x0 + x1) / 2, y: y + 30, "text-anchor": "middle", "font-size": 12, "font-weight": 700, fill: css("--stage") }, short[q.name] || q.name));
+        });
+        if (i < step) {
+          const q = r.parts.find((t) => t.name === r.pick);
+          svg.append(el("path", { d: `M${sx(q.a)},${y + 44} L${L},${y + rowH - 4} M${sx(q.b)},${y + 44} L${R},${y + rowH - 4}`, stroke: css("--bit"), "stroke-width": 1.5, fill: "none", "stroke-dasharray": "4 3" }));
+        }
+      });
+      if (step === rows.length) {
+        const last = rows[rows.length - 1]; const q = last.parts.find((t) => t.name === last.pick);
+        const y = 20 + rows.length * rowH;
+        svg.append(el("text", { x: W / 2, y: y + 4, "text-anchor": "middle", "font-size": 16, "font-weight": 700, "font-family": "JetBrains Mono, monospace", fill: css("--bit") }, `最後區間 [${fmt(q.a)}, ${fmt(q.b)})`));
+      }
+      back.disabled = step === 0; fwd.disabled = step === rows.length;
+      if (step === 0) caption.innerHTML = `從 [0, 1) 開始，依機率切成四段。第一個符號是 <b>${seq[0]}</b>。`;
+      else if (step < rows.length) caption.innerHTML = `留下 <b>${seq[step - 1]}</b> 那一段並放大，再切一次。下一個符號：<b>${seq[step]}</b>。`;
+      else caption.innerHTML = `三個符號讀完。最後區間內的任一個小數都能代表整則訊息。`;
+    }
+    back.onclick = () => { step--; draw(); };
+    fwd.onclick = () => { step++; draw(); };
+    fig.__finish = () => { step = rows.length; draw(); };
+    draw();
+  }
+
+  /* ---------- bars ---------- */
+  function bars(fig, p) {
+    const data = Object.entries(p).filter(([k]) => k !== "cards").map(([k, v]) => [k, +v]);
+    const W = 520, rowH = 60, H = 40 + rowH * data.length + 40, L = 100, R = W - 70, max = 3;
+    const sx = (v) => L + v / max * (R - L);
+    const svg = el("svg", { viewBox: `0 0 ${W} ${H}`, role: "img", "aria-label": "平均碼長比較長條圖（bits／符號）" });
+    for (let t = 0; t <= max; t++) {
+      svg.append(el("line", { x1: sx(t), x2: sx(t), y1: 24, y2: H - 34, stroke: css("--line"), "stroke-width": 1 }));
+      svg.append(el("text", { x: sx(t), y: H - 14, "text-anchor": "middle", "font-size": 13, "font-family": "JetBrains Mono, monospace", fill: css("--muted") }, t));
+    }
+    const best = Math.min(...data.map((d) => d[1]));
+    data.forEach(([k, v], i) => {
+      const y = 34 + i * rowH;
+      svg.append(el("text", { x: L - 12, y: y + 22, "text-anchor": "end", "font-size": 16, "font-weight": 700, fill: css("--ink") }, k));
+      svg.append(el("rect", { x: L, y, width: sx(v) - L, height: 32, rx: 4, fill: v === best ? css("--bit") : css("--accent"), opacity: v === best ? 1 : .75 }));
+      svg.append(el("text", { x: sx(v) + 8, y: y + 22, "font-size": 15, "font-family": "JetBrains Mono, monospace", "font-weight": 700, fill: css("--ink") }, v.toFixed(2)));
+    });
+    svg.append(el("text", { x: R + 60, y: H - 14, "text-anchor": "end", "font-size": 12, fill: css("--muted") }, "bits／符號"));
+    const cap = document.createElement("p"); cap.className = "caption"; cap.innerHTML = "同一組 A–E 符號，三種方法的平均碼長。<b>越短越好</b>。";
+    fig.append(svg, cap);
+  }
+
+  for (const fig of document.querySelectorAll(".widget")) {
+    const p = JSON.parse(fig.dataset.params);
+    ({ tree: huffman, interval: intervals, bars })[fig.dataset.widget](fig, p);
+  }
+})();
+</script>
+
+</body>
+</html>
