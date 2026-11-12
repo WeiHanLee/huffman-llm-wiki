@@ -1,0 +1,352 @@
+<title>Huffman 與算術編碼入門</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700;900&family=Space+Grotesk:wght@500;700&family=JetBrains+Mono:wght@400;600&display=swap">
+<style>
+/* Layout: 16:9 stage scaled to the window, one slide at a time; on phones the slides stack and scroll.
+   Motif: bitstreams — mono "0101" eyebrows, cobalt for structure, amber for the bit that matters. */
+:root {
+  --bg: #eef1f6;
+  --stage: #fbfcfe;
+  --ink: #142033;
+  --muted: #5b6678;
+  --line: #d5dbe6;
+  --accent: #2c54d6;
+  --accent-soft: #e3e9fb;
+  --bit: #c98a00;
+  --bit-soft: #fbf0d6;
+  --warn: #b4492f;
+  --warn-soft: #f8e5df;
+  --seg1: #2c54d6; --seg2: #4f8fd9; --seg3: #c98a00; --seg4: #8a94a6;
+  --font-body: "Noto Sans TC", "PingFang TC", "Microsoft JhengHei", system-ui, sans-serif;
+  --font-display: "Space Grotesk", "Noto Sans TC", "PingFang TC", system-ui, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0d121b; --stage: #141b27; --ink: #e6ebf3; --muted: #9aa5b8; --line: #2a3446;
+    --accent: #7d9bff; --accent-soft: #1d2a4a; --bit: #f0b429; --bit-soft: #3a2e10;
+    --warn: #f08a6c; --warn-soft: #3d2019;
+    --seg1: #7d9bff; --seg2: #5fb0f0; --seg3: #f0b429; --seg4: #6d778a;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #0d121b; --stage: #141b27; --ink: #e6ebf3; --muted: #9aa5b8; --line: #2a3446;
+  --accent: #7d9bff; --accent-soft: #1d2a4a; --bit: #f0b429; --bit-soft: #3a2e10;
+  --warn: #f08a6c; --warn-soft: #3d2019;
+  --seg1: #7d9bff; --seg2: #5fb0f0; --seg3: #f0b429; --seg4: #6d778a;
+  color-scheme: dark;
+}
+html, body { height: 100%; }
+body { background: var(--bg); color: var(--ink); font-family: var(--font-body); margin: 0; }
+.mono { font-family: var(--font-mono); }
+code { font-family: var(--font-mono); background: var(--bit-soft); color: var(--ink); padding: 0 .3em; border-radius: 4px; font-size: .92em; }
+
+/* ---------- stage (desktop) ---------- */
+.viewport { position: fixed; inset: 0; display: grid; place-items: center; overflow: hidden;
+  padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px));
+  padding-block: calc(16px + env(safe-area-inset-top, 0px)) calc(64px + env(safe-area-inset-bottom, 0px)); }
+.deck { width: 1280px; height: 720px; position: relative; transform-origin: center center; }
+.slide { position: absolute; inset: 0; background: var(--stage); border: 1px solid var(--line); border-radius: 14px;
+  box-shadow: 0 20px 50px -30px rgba(20, 32, 51, .45); display: flex; flex-direction: column; overflow: hidden; }
+.slide:not(.active) { display: none; }
+.slide-body { flex: 1; min-height: 0; padding: 52px 72px 20px; display: flex; flex-direction: column; gap: 22px; overflow: hidden; }
+.slide-foot { display: flex; justify-content: space-between; gap: 16px; padding: 12px 72px 16px; color: var(--muted); font-size: 14px; border-top: 1px solid var(--line); }
+
+.title { font-family: var(--font-display); font-weight: 700; font-size: 40px; line-height: 1.2; margin: 0; text-wrap: balance; letter-spacing: -.01em; }
+.title::before { content: ""; display: block; width: 56px; height: 6px; margin-bottom: 18px;
+  background: repeating-linear-gradient(90deg, var(--accent) 0 8px, transparent 8px 12px, var(--bit) 12px 20px, transparent 20px 24px); }
+.items { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 16px; font-size: 25px; line-height: 1.55; }
+.items li { display: block; position: relative; padding-left: 30px; }
+.items li.claim::before { content: ""; position: absolute; left: 4px; top: .62em; width: 10px; height: 10px; background: var(--accent); border-radius: 2px; }
+.items li.hint { padding: 12px 18px 12px 52px; background: var(--accent-soft); border-radius: 10px; }
+.items li.hint .hint-mark { position: absolute; left: 16px; top: 12px; }
+.items li.warn { padding: 10px 18px; background: var(--warn-soft); border-left: 4px solid var(--warn); border-radius: 0 10px 10px 0; }
+.refs { display: inline-flex; flex-wrap: wrap; gap: 6px; vertical-align: middle; margin-left: 4px; }
+.ref { font-family: var(--font-mono); font-size: 13px; line-height: 1; padding: 4px 7px; border-radius: 999px; color: var(--accent);
+  border: 1px solid var(--accent); background: transparent; cursor: help; position: relative; white-space: nowrap; }
+.ref:hover::after, .ref:focus::after { content: attr(data-tip); position: absolute; left: 0; bottom: calc(100% + 8px); z-index: 5;
+  width: 420px; white-space: normal; font-family: var(--font-body); font-size: 15px; line-height: 1.5; color: var(--ink);
+  background: var(--stage); border: 1px solid var(--line); border-radius: 8px; padding: 10px 12px; box-shadow: 0 10px 30px -12px rgba(0,0,0,.35); }
+.ref:focus { outline: 2px solid var(--bit); outline-offset: 2px; }
+
+/* cover */
+.layout-cover .slide-body { justify-content: center; gap: 18px; padding-inline: 96px; }
+.eyebrow { color: var(--bit); letter-spacing: .12em; font-size: 16px; margin: 0; }
+.cover-title { font-family: var(--font-display); font-weight: 700; font-size: 72px; line-height: 1.1; margin: 0; letter-spacing: -.02em; text-wrap: balance; }
+.sub { color: var(--muted); font-size: 26px; margin: 0; }
+.sub.small { font-size: 16px; }
+.cover-items { font-size: 24px; max-width: 900px; }
+
+/* split layouts */
+.split { display: grid; grid-template-columns: 1fr 1fr; gap: 36px; flex: 1; min-height: 0; }
+.split .col { min-width: 0; display: flex; flex-direction: column; gap: 16px; }
+.split .items { font-size: 22px; gap: 12px; }
+.widget { margin: 0; background: var(--bg); border: 1px solid var(--line); border-radius: 12px; padding: 16px; display: flex; flex-direction: column; gap: 12px; flex: 1; min-height: 0; }
+.widget svg { width: 100%; height: auto; display: block; }
+.widget .controls { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+.widget button { font: 600 15px var(--font-body); color: var(--stage); background: var(--accent); border: 0; border-radius: 8px; padding: 8px 14px; cursor: pointer; }
+.widget button:disabled { opacity: .35; cursor: default; }
+.widget button:focus-visible { outline: 3px solid var(--bit); outline-offset: 2px; }
+.widget .caption { font-size: 16px; color: var(--muted); line-height: 1.5; min-height: 3em; }
+.widget .caption b { color: var(--ink); }
+
+/* table */
+.table-wrap { overflow-x: auto; }
+table { border-collapse: collapse; width: 100%; font-size: 21px; }
+th, td { text-align: left; padding: 12px 14px; border-bottom: 1px solid var(--line); vertical-align: top; }
+th { font-family: var(--font-display); font-size: 17px; color: var(--muted); letter-spacing: .04em; }
+td:first-child { font-weight: 700; white-space: nowrap; }
+.refcell { width: 1%; white-space: nowrap; }
+.layout-table .items { font-size: 22px; }
+.refs-table { font-size: 17px; }
+.refs-table td:first-child { font-weight: 400; color: var(--accent); }
+.refs-table a { color: var(--accent); }
+
+/* quiz */
+.quizzes { display: flex; flex-direction: column; gap: 10px; }
+.quiz-label { margin: 0; font-size: 15px; color: var(--bit); font-family: var(--font-mono); letter-spacing: .08em; }
+.quiz { border: 1px solid var(--line); border-radius: 10px; padding: 10px 16px; font-size: 21px; background: var(--bg); }
+.quiz summary { cursor: pointer; font-weight: 500; }
+.quiz p { margin: 8px 0 0; color: var(--accent); font-weight: 700; }
+.layout-quiz .items { font-size: 21px; gap: 10px; }
+.layout-quiz .slide-body { gap: 16px; }
+
+/* nav */
+.nav { position: fixed; left: 0; right: 0; bottom: 0; display: flex; justify-content: center; align-items: center; gap: 14px;
+  padding: 10px max(16px, env(safe-area-inset-right, 0px)) calc(12px + env(safe-area-inset-bottom, 0px)) max(16px, env(safe-area-inset-left, 0px)); }
+.nav button { font: 600 15px var(--font-body); color: var(--ink); background: var(--stage); border: 1px solid var(--line); border-radius: 999px; padding: 8px 18px; cursor: pointer; }
+.nav button:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
+.nav .count { font-family: var(--font-mono); color: var(--muted); font-size: 14px; min-width: 70px; text-align: center; }
+.progress { position: fixed; left: 0; top: env(safe-area-inset-top, 0px); height: 4px; background: var(--accent); transition: width .25s; }
+
+/* ---------- phone: stacked, scrolling ---------- */
+@media (max-width: 760px) {
+  .viewport { position: static; display: block; overflow: visible; padding-block: 16px 24px; }
+  .deck { width: auto; height: auto; transform: none !important; display: flex; flex-direction: column; gap: 16px; }
+  .slide, .slide:not(.active) { position: static; display: flex; }
+  .slide-body { padding: 24px 20px 12px; overflow: visible; }
+  .slide-foot { padding: 10px 20px 12px; flex-wrap: wrap; font-size: 12px; }
+  .title { font-size: 26px; }
+  .cover-title { font-size: 40px; }
+  .layout-cover .slide-body { padding-inline: 20px; }
+  .items, .split .items, .layout-quiz .items, .layout-table .items, .cover-items { font-size: 17px; }
+  .sub { font-size: 18px; }
+  .split { grid-template-columns: 1fr; }
+  table { font-size: 15px; }
+  .quiz { font-size: 16px; }
+  .ref:hover::after, .ref:focus::after { width: 240px; }
+  .nav, .progress { display: none; }
+}
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; animation: none !important; } }
+</style>
+
+<div class="progress" id="progress"></div>
+<main class="viewport" id="viewport">
+  <div class="deck" id="deck">
+<!--SLIDES-->
+  </div>
+</main>
+<nav class="nav" aria-label="投影片導覽">
+  <button id="prev" type="button" aria-label="上一頁">← 上一頁</button>
+  <span class="count" id="count">1 / 1</span>
+  <button id="next" type="button" aria-label="下一頁">下一頁 →</button>
+</nav>
+
+<script>
+(() => {
+  const slides = [...document.querySelectorAll(".slide")];
+  const deck = document.getElementById("deck");
+  const count = document.getElementById("count");
+  const bar = document.getElementById("progress");
+  let cur = 0;
+  function fit() {
+    const vp = document.getElementById("viewport");
+    if (window.matchMedia("(max-width: 760px)").matches) { deck.style.transform = ""; return; }
+    const s = Math.min((vp.clientWidth - 32) / 1280, (vp.clientHeight - 80) / 720);
+    deck.style.transform = `scale(${Math.max(s, 0.2)})`;
+  }
+  function show(i) {
+    cur = Math.max(0, Math.min(slides.length - 1, i));
+    slides.forEach((s, k) => s.classList.toggle("active", k === cur));
+    count.textContent = `${cur + 1} / ${slides.length}`;
+    bar.style.width = `${((cur + 1) / slides.length) * 100}%`;
+    document.getElementById("prev").disabled = cur === 0;
+    document.getElementById("next").disabled = cur === slides.length - 1;
+    if (location.hash !== `#s${cur + 1}`) history.replaceState(null, "", `#s${cur + 1}`);
+  }
+  document.getElementById("prev").onclick = () => show(cur - 1);
+  document.getElementById("next").onclick = () => show(cur + 1);
+  document.addEventListener("keydown", (e) => {
+    if (e.target.closest && e.target.closest("button, summary, input")) { if (e.key !== "ArrowRight" && e.key !== "ArrowLeft") return; }
+    if (["ArrowRight", "PageDown", " "].includes(e.key)) { e.preventDefault(); show(cur + 1); }
+    if (["ArrowLeft", "PageUp"].includes(e.key)) { e.preventDefault(); show(cur - 1); }
+  });
+  window.addEventListener("resize", fit);
+  window.addEventListener("hashchange", () => { const m = location.hash.match(/^#s(\d+)$/); if (m) show(+m[1] - 1); });
+  const m = location.hash.match(/^#s(\d+)$/);
+  show(m ? +m[1] - 1 : 0);
+  fit();
+  window.__deck = { show, count: slides.length };
+
+  const NS = "http://www.w3.org/2000/svg";
+  const el = (tag, attrs = {}, text) => { const n = document.createElementNS(NS, tag); for (const k in attrs) n.setAttribute(k, attrs[k]); if (text != null) n.textContent = text; return n; };
+  const fmt = (x) => (+x.toFixed(3)).toString();
+  const css = (v) => `var(${v})`;
+
+  /* ---------- Huffman tree builder ---------- */
+  function huffman(fig, p) {
+    const leaves = Object.entries(p).filter(([k]) => k !== "cards").map(([k, v], i) => ({ label: k, w: +v, id: i }));
+    // run the algorithm: always merge the two lightest; the lighter one goes left (bit 0)
+    let forest = leaves.map((l) => ({ ...l }));
+    const merges = [];
+    let nid = leaves.length;
+    while (forest.length > 1) {
+      forest.sort((a, b) => a.w - b.w || a.id - b.id);
+      const [l, r] = forest.splice(0, 2);
+      const node = { id: nid++, w: +(l.w + r.w).toFixed(2), left: l, right: r, step: merges.length + 1 };
+      merges.push(node); forest.push(node);
+    }
+    const root = forest[0];
+    // codes
+    const codes = {};
+    (function walk(n, c) { if (!n.left) { codes[n.label] = c; return; } walk(n.left, c + "0"); walk(n.right, c + "1"); })(root, "");
+    window.__huffmanCodes = codes;
+    // layout: leaf x by in-order position, depth by y
+    let k = 0; const pos = {};
+    (function lay(n, d) { if (!n.left) { pos[n.id] = { x: k++, d }; return; } lay(n.left, d + 1); lay(n.right, d + 1); pos[n.id] = { x: (pos[n.left.id].x + pos[n.right.id].x) / 2, d }; })(root, 0);
+    const W = 520, H = 330, padX = 50, top = 34, dy = 74;
+    const X = (x) => padX + x * ((W - 2 * padX) / (leaves.length - 1));
+    const Y = (d) => top + d * dy;
+    const svg = el("svg", { viewBox: `0 0 ${W} ${H}`, role: "img", "aria-label": "Huffman 建樹過程" });
+    const caption = document.createElement("p"); caption.className = "caption";
+    const controls = document.createElement("div"); controls.className = "controls";
+    const back = document.createElement("button"); back.type = "button"; back.textContent = "← 上一步";
+    const fwd = document.createElement("button"); fwd.type = "button"; fwd.textContent = "下一步 →";
+    const stepLbl = document.createElement("span"); stepLbl.className = "mono"; stepLbl.style.color = css("--muted");
+    controls.append(back, fwd, stepLbl);
+    fig.append(svg, controls, caption);
+    let step = 0;
+    function draw() {
+      svg.replaceChildren();
+      const visible = (n) => !n.left || n.step <= step;
+      const all = [];
+      (function collect(n) { all.push(n); if (n.left) { collect(n.left); collect(n.right); } })(root);
+      for (const n of all) if (n.left && visible(n)) {
+        for (const [c, bit] of [[n.left, "0"], [n.right, "1"]]) {
+          svg.append(el("line", { x1: X(pos[n.id].x), y1: Y(pos[n.id].d), x2: X(pos[c.id].x), y2: Y(pos[c.id].d), stroke: css("--line"), "stroke-width": 3 }));
+          const mx = (X(pos[n.id].x) + X(pos[c.id].x)) / 2, my = (Y(pos[n.id].d) + Y(pos[c.id].d)) / 2;
+          svg.append(el("text", { x: mx + (bit === "0" ? -12 : 12), y: my, "text-anchor": "middle", "font-size": 15, "font-family": "JetBrains Mono, monospace", fill: css("--bit"), "font-weight": 700 }, bit));
+        }
+      }
+      for (const n of all) if (visible(n)) {
+        const isNew = n.left && n.step === step;
+        const cx = X(pos[n.id].x), cy = Y(pos[n.id].d);
+        svg.append(el("circle", { cx, cy, r: 22, fill: n.left ? (isNew ? css("--bit-soft") : css("--stage")) : css("--accent-soft"), stroke: isNew ? css("--bit") : css("--accent"), "stroke-width": isNew ? 3 : 2 }));
+        svg.append(el("text", { x: cx, y: cy + 5, "text-anchor": "middle", "font-size": 13, "font-family": "JetBrains Mono, monospace", fill: css("--ink") }, n.w.toFixed(2)));
+        if (!n.left) {
+          svg.append(el("text", { x: cx, y: cy - 30, "text-anchor": "middle", "font-size": 17, "font-weight": 700, fill: css("--ink") }, n.label));
+          if (step === merges.length) svg.append(el("text", { x: cx, y: cy + 42, "text-anchor": "middle", "font-size": 16, "font-weight": 700, "font-family": "JetBrains Mono, monospace", fill: css("--bit") }, codes[n.label]));
+        }
+      }
+      stepLbl.textContent = `步驟 ${step} / ${merges.length}`;
+      back.disabled = step === 0; fwd.disabled = step === merges.length;
+      if (step === 0) caption.innerHTML = "一開始：每個符號是一片葉子，圈內是它的權重（出現機率）。";
+      else if (step < merges.length) { const m = merges[step - 1]; caption.innerHTML = `合併目前最小的兩個：<b>${m.left.w.toFixed(2)}</b> + <b>${m.right.w.toFixed(2)}</b> = <b>${m.w.toFixed(2)}</b>`; }
+      else caption.innerHTML = `完成！從根往下：左 0、右 1。碼字：${leaves.map((l) => `<b>${l.label}</b>=<code>${codes[l.label]}</code>`).join("　")}`;
+    }
+    back.onclick = () => { step--; draw(); };
+    fwd.onclick = () => { step++; draw(); };
+    fig.__finish = () => { step = merges.length; draw(); };
+    draw();
+  }
+
+  /* ---------- arithmetic coding intervals ---------- */
+  function intervals(fig, p) {
+    const syms = Object.entries(p).filter(([k]) => !["seq", "cards"].includes(k)).map(([k, v]) => [k, +v]);
+    const seq = p.seq.split(",");
+    const colors = ["--seg1", "--seg2", "--seg3", "--seg4"];
+    const rows = [];
+    let lo = 0, hi = 1;
+    for (const s of seq) {
+      const parts = []; let start = lo;
+      for (const [name, prob] of syms) { const w = (hi - lo) * prob; parts.push({ name, a: start, b: start + w }); start += w; }
+      const pick = parts.find((q) => q.name === s);
+      rows.push({ lo, hi, parts, pick: s });
+      lo = pick.a; hi = pick.b;
+    }
+    window.__intervals = rows.map((r) => [fmt(r.parts.find((q) => q.name === r.pick).a), fmt(r.parts.find((q) => q.name === r.pick).b)]);
+    const W = 520, rowH = 82, H = 26 + rowH * rows.length + 30, L = 20, R = W - 20;
+    const svg = el("svg", { viewBox: `0 0 ${W} ${H}`, role: "img", "aria-label": "算術編碼區間縮小過程" });
+    const caption = document.createElement("p"); caption.className = "caption";
+    const controls = document.createElement("div"); controls.className = "controls";
+    const back = document.createElement("button"); back.type = "button"; back.textContent = "← 上一步";
+    const fwd = document.createElement("button"); fwd.type = "button"; fwd.textContent = "讀下一個符號 →";
+    controls.append(back, fwd);
+    fig.append(svg, controls, caption);
+    let step = 0;
+    const short = { "NEUTRAL": "NEU", "POSITIVE": "POS", "NEGATIVE": "NEG", "END-OF-DATA": "END" };
+    function draw() {
+      svg.replaceChildren();
+      rows.forEach((r, i) => {
+        if (i > step) return;
+        const y = 20 + i * rowH;
+        const sx = (v) => L + (v - r.lo) / (r.hi - r.lo) * (R - L);
+        svg.append(el("text", { x: L, y: y, "font-size": 13, "font-family": "JetBrains Mono, monospace", fill: css("--muted") }, `[${fmt(r.lo)}, ${fmt(r.hi)})`));
+        r.parts.forEach((q, j) => {
+          const chosen = q.name === r.pick && i < step + 1;
+          const x0 = sx(q.a), x1 = sx(q.b);
+          svg.append(el("rect", { x: x0, y: y + 8, width: Math.max(x1 - x0 - 2, 1), height: 34, rx: 4, fill: css(colors[j]), opacity: (i < step || (i === step && step === rows.length)) ? (q.name === r.pick ? 1 : .22) : .85 }));
+          if (x1 - x0 > 34) svg.append(el("text", { x: (x0 + x1) / 2, y: y + 30, "text-anchor": "middle", "font-size": 12, "font-weight": 700, fill: css("--stage") }, short[q.name] || q.name));
+        });
+        if (i < step) {
+          const q = r.parts.find((t) => t.name === r.pick);
+          svg.append(el("path", { d: `M${sx(q.a)},${y + 44} L${L},${y + rowH - 4} M${sx(q.b)},${y + 44} L${R},${y + rowH - 4}`, stroke: css("--bit"), "stroke-width": 1.5, fill: "none", "stroke-dasharray": "4 3" }));
+        }
+      });
+      if (step === rows.length) {
+        const last = rows[rows.length - 1]; const q = last.parts.find((t) => t.name === last.pick);
+        const y = 20 + rows.length * rowH;
+        svg.append(el("text", { x: W / 2, y: y + 4, "text-anchor": "middle", "font-size": 16, "font-weight": 700, "font-family": "JetBrains Mono, monospace", fill: css("--bit") }, `最後區間 [${fmt(q.a)}, ${fmt(q.b)})`));
+      }
+      back.disabled = step === 0; fwd.disabled = step === rows.length;
+      if (step === 0) caption.innerHTML = `從 [0, 1) 開始，依機率切成四段。第一個符號是 <b>${seq[0]}</b>。`;
+      else if (step < rows.length) caption.innerHTML = `留下 <b>${seq[step - 1]}</b> 那一段並放大，再切一次。下一個符號：<b>${seq[step]}</b>。`;
+      else caption.innerHTML = `三個符號讀完。最後區間內的任一個小數都能代表整則訊息。`;
+    }
+    back.onclick = () => { step--; draw(); };
+    fwd.onclick = () => { step++; draw(); };
+    fig.__finish = () => { step = rows.length; draw(); };
+    draw();
+  }
+
+  /* ---------- bars ---------- */
+  function bars(fig, p) {
+    const data = Object.entries(p).filter(([k]) => k !== "cards").map(([k, v]) => [k, +v]);
+    const W = 520, rowH = 60, H = 40 + rowH * data.length + 40, L = 100, R = W - 70, max = 3;
+    const sx = (v) => L + v / max * (R - L);
+    const svg = el("svg", { viewBox: `0 0 ${W} ${H}`, role: "img", "aria-label": "平均碼長比較長條圖（bits／符號）" });
+    for (let t = 0; t <= max; t++) {
+      svg.append(el("line", { x1: sx(t), x2: sx(t), y1: 24, y2: H - 34, stroke: css("--line"), "stroke-width": 1 }));
+      svg.append(el("text", { x: sx(t), y: H - 14, "text-anchor": "middle", "font-size": 13, "font-family": "JetBrains Mono, monospace", fill: css("--muted") }, t));
+    }
+    const best = Math.min(...data.map((d) => d[1]));
+    data.forEach(([k, v], i) => {
+      const y = 34 + i * rowH;
+      svg.append(el("text", { x: L - 12, y: y + 22, "text-anchor": "end", "font-size": 16, "font-weight": 700, fill: css("--ink") }, k));
+      svg.append(el("rect", { x: L, y, width: sx(v) - L, height: 32, rx: 4, fill: v === best ? css("--bit") : css("--accent"), opacity: v === best ? 1 : .75 }));
+      svg.append(el("text", { x: sx(v) + 8, y: y + 22, "font-size": 15, "font-family": "JetBrains Mono, monospace", "font-weight": 700, fill: css("--ink") }, v.toFixed(2)));
+    });
+    svg.append(el("text", { x: R + 60, y: H - 14, "text-anchor": "end", "font-size": 12, fill: css("--muted") }, "bits／符號"));
+    const cap = document.createElement("p"); cap.className = "caption"; cap.innerHTML = "同一組 A–E 符號，三種方法的平均碼長。<b>越短越好</b>。";
+    fig.append(svg, cap);
+  }
+
+  for (const fig of document.querySelectorAll(".widget")) {
+    const p = JSON.parse(fig.dataset.params);
+    ({ tree: huffman, interval: intervals, bars })[fig.dataset.widget](fig, p);
+  }
+})();
+</script>

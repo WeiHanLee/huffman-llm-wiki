@@ -12,6 +12,6 @@
 - 丟掉被判斷為不必要或較不重要的資訊，用一些保真度換取更小的檔案。[src:raw/01-data-compression.md#Lossy]
 - 例：人眼對亮度比對顏色敏感，所以 JPEG 會捨去觀看者不易察覺的細節。[src:raw/01-data-compression.md#Lossy]
 
-💡 本 wiki 的主角 Huffman 與算術編碼都屬於「無失真」。
+- 本 wiki 的主角 Huffman 與算術編碼都用於無失真壓縮。[src:raw/05-huffman-coding.md#Lead] [src:raw/06-arithmetic-coding.md#Lead]
 
 相關：[[data-compression]]

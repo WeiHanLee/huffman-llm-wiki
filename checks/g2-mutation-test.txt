@@ -1,0 +1,9 @@
+[缺出處] drafts/04.md:6  沒有 [card:]：- 永遠出同一面的硬幣：沒有不確定性，熵是零。
+[字太多] drafts/04.md  245 字 > 230
+[引用不存在] drafts/06.md:6  [card:prefix-code#C9] 不存在
+[越權引用] drafts/07.md:5  [card:huffman-coding#C1] 不在大綱為本頁指定的卡片中
+[鷹架含數字] drafts/08.md:7  💡/@ 行不得含數字（數字一定要有出處）
+[數字查不到] drafts/10.md:3  「2.3」不在所引卡片中
+
+頁數 14｜問題 6
+G2 FAIL ❌

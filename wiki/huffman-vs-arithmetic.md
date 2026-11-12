@@ -13,9 +13,9 @@
 |---|---|---|
 | 編碼單位 | 一個符號一個碼字 [src:raw/05-huffman-coding.md#Optimality] | 整則訊息一個小數 [src:raw/06-arithmetic-coding.md#Lead] |
 | 壓縮效果 | 符號逐一編碼中最佳，但受整數碼長限制 [src:raw/05-huffman-coding.md#Optimality] [src:raw/06-arithmetic-coding.md#Huffman coding] | 更接近熵，長訊息尤其明顯 [src:raw/06-arithmetic-coding.md#Lead] |
-| 速度 | 較快 [src:raw/05-huffman-coding.md#Optimality] | 較慢（需維護區間與精度）[src:raw/06-arithmetic-coding.md#Precision and renormalization] |
+| 速度 | 較快 [src:raw/05-huffman-coding.md#Optimality] | 來源只說 Huffman 較快，未說明原因 [src:raw/05-huffman-coding.md#Optimality] |
 | 專利 | 歷史上沒有專利問題 [src:raw/05-huffman-coding.md#Optimality] | 曾有許多專利，現多已過期 [src:raw/06-arithmetic-coding.md#History and patents] |
-| 常見應用 | DEFLATE（gzip）、JPEG、MP3 [src:raw/05-huffman-coding.md#Applications] | 搭配機率模型的強力壓縮器 [src:raw/01-data-compression.md#Lossless] |
+| 常見應用 | 前綴碼常用於 DEFLATE（gzip）、JPEG、MP3；JPEG 實作多用 Huffman [src:raw/05-huffman-coding.md#Applications] [src:raw/06-arithmetic-coding.md#History and patents] | 搭配機率模型的強力壓縮器 [src:raw/01-data-compression.md#Lossless] |
 
 ## 兩個來源的一致結論
 - 〈Data compression〉：算術編碼能比知名的 Huffman 演算法壓得更好。[src:raw/01-data-compression.md#Lossless]

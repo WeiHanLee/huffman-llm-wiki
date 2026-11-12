@@ -22,3 +22,6 @@
 ## [2026-11-12] ingest 06 | Arithmetic coding → 新建 arithmetic-coding、huffman-vs-arithmetic；更新 huffman-coding、data-compression。以 tools/calc.py 驗證 0.538 落在 [0.534, 0.54)
 ## [2026-11-12] lint 修正 | huffman-vs-arithmetic、arithmetic-coding：又把 one bit / powers of two / May 轉成 1、2、5（L5×3），改回來源用字。這是第 3 次同類錯誤 → 寫入 AGENTS.md §4 規則
 ## [2026-11-12] lint 規則修正 | v3：不含數字的純標籤表頭不視為主張
+
+## [2026-11-12] AI 審查回饋 → 退回 wiki | huffman-vs-arithmetic：①「較慢（需維護區間與精度）」的理由 raw 沒寫 → 改為「來源只說 Huffman 較快」；②應用欄把 raw 的「前綴碼」寫成 Huffman → 改為「前綴碼常用於…；JPEG 實作多用 Huffman」並補 raw/06 出處
+## [2026-11-12] 自查 | lossless-vs-lossy：「主角都屬於無失真」是事實主張卻用 💡 逃過 L4 → 改成有出處的一般行（lint 的盲點：💡 行不被檢查）

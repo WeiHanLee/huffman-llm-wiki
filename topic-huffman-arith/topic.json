@@ -1,0 +1,12 @@
+{
+  "title": "Huffman 與算術編碼入門：用更少的 bit 說同一件事",
+  "keywords": ["huffman", "算術編碼", "熵", "前綴碼", "壓縮", "bit"],
+  "must_cover": {
+    "為什麼要壓縮": "data-compression",
+    "熵與壓縮極限": "entropy",
+    "前綴碼": "prefix-code",
+    "Huffman 編碼": "huffman-coding",
+    "算術編碼": "arithmetic-coding",
+    "兩者比較": "huffman-vs-arithmetic"
+  }
+}
