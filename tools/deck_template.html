@@ -101,7 +101,9 @@ th { font-family: var(--font-display); font-size: 17px; color: var(--muted); let
 td:first-child { font-weight: 700; white-space: nowrap; }
 .refcell { width: 1%; white-space: nowrap; }
 .layout-table .items { font-size: 22px; }
-.refs-table { font-size: 17px; }
+.refs-table { font-size: 15px; }
+.refs-table th, .refs-table td { padding: 7px 10px; }
+.layout-refs .slide-body { gap: 14px; }
 .refs-table td:first-child { font-weight: 400; color: var(--accent); }
 .refs-table a { color: var(--accent); }
 
@@ -125,8 +127,9 @@ td:first-child { font-weight: 700; white-space: nowrap; }
 /* ---------- phone: stacked, scrolling ---------- */
 @media (max-width: 760px) {
   .viewport { position: static; display: block; overflow: visible; padding-block: 16px 24px; }
-  .deck { width: auto; height: auto; transform: none !important; display: flex; flex-direction: column; gap: 16px; }
-  .slide, .slide:not(.active) { position: static; display: flex; }
+  .deck { width: 100%; max-width: 100%; height: auto; transform: none !important; display: flex; flex-direction: column; gap: 16px; }
+  .slide, .slide:not(.active) { position: static; display: flex; min-width: 0; max-width: 100%; }
+  .refcell, td:first-child, .ref { white-space: normal; }
   .slide-body { padding: 24px 20px 12px; overflow: visible; }
   .slide-foot { padding: 10px 20px 12px; flex-wrap: wrap; font-size: 12px; }
   .title { font-size: 26px; }
