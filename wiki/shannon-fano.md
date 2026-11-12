@@ -23,4 +23,4 @@
 - Fano 平均碼長約 2.28 bits；Shannon 的方法是 2.62 bits。[src:raw/04-shannon-fano.md#Comparison with Huffman coding]
 - Huffman 平均碼長約 2.23 bits，三者中最短。[calc:tools/calc.py sf_huffman_avg＝(15×1+24×3)/39，來源原數字未渲染]
 
-相關：[[entropy]]、[[source-coding-theorem]]
+相關：[[entropy]]、[[source-coding-theorem]]、[[prefix-code]]、[[huffman-coding]]

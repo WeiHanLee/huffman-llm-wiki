@@ -14,3 +14,7 @@
 
 ## [2026-11-12] ingest 04 | Shannon–Fano → 新建 shannon-fano；更新 source-coding-theorem。擷取工具的「Huffman 約 2.23 bits」為工具自算，不收入 raw，wiki 改標 [calc:] 並以 tools/calc.py 重算（同法重算 Fano＝2.28，與來源一致）
 ## [2026-11-12] lint 修正 | shannon-fano：表頭含數字 39 但無出處（L4），補 [src:]
+
+## [2026-11-12] ingest 05 | Huffman coding → 新建 prefix-code、huffman-coding；更新 shannon-fano、data-compression
+## [2026-11-12] 矛盾 | Huffman 編碼年代：raw/05 = 1951 修課提出、1952 發表；raw/01 = developed in 1950。兩說並列於 huffman-coding，未裁決
+## [2026-11-12] lint 修正 | huffman-coding：「來源 05／01」被 L5 誤判為數字 → 改寫成條目名稱；表頭補出處（L4）
