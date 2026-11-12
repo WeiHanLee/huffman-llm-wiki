@@ -11,3 +11,6 @@
 
 ## [2026-11-12] ingest 03 | Source coding theorem → 新建 source-coding-theorem；更新 entropy（連到定理）
 ## [2026-11-12] lint 修正 | source-coding-theorem：💡 白話行放在列表內被判缺出處（L4），改為行首 💡
+
+## [2026-11-12] ingest 04 | Shannon–Fano → 新建 shannon-fano；更新 source-coding-theorem。擷取工具的「Huffman 約 2.23 bits」為工具自算，不收入 raw，wiki 改標 [calc:] 並以 tools/calc.py 重算（同法重算 Fano＝2.28，與來源一致）
+## [2026-11-12] lint 修正 | shannon-fano：表頭含數字 39 但無出處（L4），補 [src:]

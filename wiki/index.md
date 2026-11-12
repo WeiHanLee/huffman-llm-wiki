@@ -7,3 +7,6 @@
 - [[lossless-vs-lossy]]：無失真與失真壓縮的差別與例子
 - [[entropy]]：熵＝平均意外程度，也是無失真壓縮的極限
 - [[source-coding-theorem]]：信源編碼定理——熵是壓縮的地板
+
+## 編碼方法
+- [[shannon-fano]]：由上而下對半切的早期方法，含與 Huffman 的同例比較

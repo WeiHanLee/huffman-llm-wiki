@@ -13,4 +13,4 @@
 - 這個定理讓 [[entropy]] 從抽象的「不確定性」變成有實際意義的「最少要用幾個 bits」。[src:raw/03-source-coding-theorem.md#Introduction]
 💡 後面介紹的編碼方法，都可以拿「離熵多近」來評分。
 
-相關：[[entropy]]、[[data-compression]]
+相關：[[entropy]]、[[data-compression]]、[[shannon-fano]]

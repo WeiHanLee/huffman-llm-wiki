@@ -1,0 +1,32 @@
+#!/usr/bin/env python3
+"""重算 wiki 中標 [calc:] 的數字，寫入 tools/calc_results.json 供 lint L5 比對。
+每個數字都只用 raw/ 中出現的來源數字計算。"""
+import json
+import math
+from pathlib import Path
+
+results = {}
+
+# raw/04-shannon-fano.md#Fano's code：counts 15,7,6,6,5（共 39）
+counts = {"A": 15, "B": 7, "C": 6, "D": 6, "E": 5}
+total = sum(counts.values())
+assert total == 39
+# raw/04#Comparison with Huffman coding：Huffman 碼長 A=1、B–E=3
+huff_len = {"A": 1, "B": 3, "C": 3, "D": 3, "E": 3}
+# raw/04#Fano's code：Fano 碼長 A,B,C=2、D,E=3
+fano_len = {"A": 2, "B": 2, "C": 2, "D": 3, "E": 3}
+
+huff_avg = sum(counts[s] * huff_len[s] for s in counts) / total
+fano_avg = sum(counts[s] * fano_len[s] for s in counts) / total
+entropy = -sum(c / total * math.log2(c / total) for c in counts.values())
+
+results["sf_huffman_avg"] = round(huff_avg, 2)       # 87/39
+results["sf_fano_avg_check"] = round(fano_avg, 2)    # 應等於來源的 2.28
+results["sf_entropy"] = round(entropy, 2)
+
+assert results["sf_fano_avg_check"] == 2.28, "Fano 平均碼長和來源 2.28 不符"
+
+out = Path(__file__).with_name("calc_results.json")
+out.write_text(json.dumps(results, ensure_ascii=False, indent=2), encoding="utf-8")
+for k, v in results.items():
+    print(f"{k} = {v}")
