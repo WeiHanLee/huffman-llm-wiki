@@ -8,11 +8,12 @@ NTUST M11507327 電機碩一 李威漢 Huffman與算術編碼
 規模：ingest 6 篇 Wikipedia 條目（Data compression、Entropy、Shannon's source coding theorem、Shannon–Fano coding、Huffman coding、Arithmetic coding），一篇一 commit；產出 9 個知識頁、index.md、log.md。每句關鍵主張都標 [src:raw/檔名#章節]，數字必須能在來源章節找到；兩來源矛盾（Huffman 編碼年代：1950 vs 1951 提出／1952 發表）依規則兩說並列標 ⚠。
 
 二、LLM Wiki 連結
-https://claude.ai/artifact/337UMUQ1j27QdhTN8JvQLL
+https://weihanlee.github.io/huffman-llm-wiki/wiki.html
+原始檔（GitHub repo）：https://github.com/WeiHanLee/huffman-llm-wiki
 （網頁內含：所有知識頁、raw 原文（出處標籤可點到原文章節）、需求訪談紀錄、AGENTS.md、log.md、git 紀錄、lint 結果、Graph 設計、執行報告）
 
 三、教學 HTML 簡報連結
-https://claude.ai/artifact/R7ijvj8J2HEQ5eEzStdojU
+https://weihanlee.github.io/huffman-llm-wiki/slides.html
 15 頁（← → 鍵翻頁）。教學結構：為什麼壓縮 → 熵（極限）→ 前綴碼（規則）→ Shannon–Fano → Huffman（互動建樹）→ 成績單 → Huffman 的天花板 → 算術編碼（互動切區間）→ 對照表 → 回顧＋小測驗 → 參考來源。
 Wiki 與簡報的對應：每句後面的標籤（如「entropy C6」）是證據卡編號，滑過去會顯示 wiki 原句；頁尾列出本頁用到的 wiki 頁；最後一頁列出「簡報 → wiki 頁 → 原始條目」。
 

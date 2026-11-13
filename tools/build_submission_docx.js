@@ -41,7 +41,8 @@ const body = [
 
   H("2. LLM Wiki 連結或成果"),
   B([r("Wiki 網頁："), link(WIKI_URL)]),
-  B("網頁內含：所有知識頁、raw 原文（出處標籤可點到原文章節）、需求訪談紀錄、AGENTS.md、log.md、git 紀錄（11 個 commit）、lint 結果、Graph 設計、執行報告。", 0),
+  B([r("原始檔（GitHub repo）："), link("https://github.com/WeiHanLee/huffman-llm-wiki")]),
+  B("網頁內含：所有知識頁、raw 原文（出處標籤可點到原文章節）、需求訪談紀錄、AGENTS.md、log.md、git 紀錄、lint 結果、Graph 設計、執行報告。", 0),
 
   H("3. 教學 HTML 簡報連結"),
   B([r("簡報："), link(DECK_URL), r("（共 15 頁，← → 鍵翻頁）")]),
