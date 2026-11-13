@@ -32,11 +32,11 @@ git rev-parse --is-inside-work-tree 2>/dev/null && echo HAS_GIT || echo NO_GIT
   git bundle verify ../huffman-history.bundle
   git fetch ../huffman-history.bundle main
   git update-ref refs/heads/main FETCH_HEAD
-  git reset            # 用最新 commit 建立 index，不會改動任何工作檔案
+  git reset --hard main   # 讓工作檔案與最新 commit 完全一致（傳輸時圖片可能被重新編碼，以 git 紀錄為準）
   git status --short   # 應該是空的（工作檔案與最新 commit 完全一致）
   git log --oneline | head -3
   ```
-  若 `git status` 顯示有檔案變更，多半只是換行字元（CRLF/LF）差異：先執行 `git diff --stat` 給我看，**不要 commit**。
+  若 `git status` 仍顯示有檔案變更，先執行 `git diff --stat` 給我看，**不要 commit**。
 - **HAS_GIT** → 跳過這步。
 
 
