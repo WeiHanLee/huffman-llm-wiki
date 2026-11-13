@@ -30,7 +30,8 @@ git rev-parse --is-inside-work-tree 2>/dev/null && echo HAS_GIT || echo NO_GIT
   ```bash
   git bundle verify ../huffman-history.bundle
   git init -b main
-  git fetch ../huffman-history.bundle main:main
+  git fetch ../huffman-history.bundle main
+  git update-ref refs/heads/main FETCH_HEAD
   git reset            # 用最新 commit 建立 index，不會改動任何工作檔案
   git status --short   # 應該是空的（工作檔案與最新 commit 完全一致）
   git log --oneline | head -3
