@@ -28,8 +28,8 @@ git rev-parse --is-inside-work-tree 2>/dev/null && echo HAS_GIT || echo NO_GIT
 ```
 - **NO_GIT** → 在本資料夾執行：
   ```bash
-  git bundle verify ../huffman-history.bundle
   git init -b main
+  git bundle verify ../huffman-history.bundle
   git fetch ../huffman-history.bundle main
   git update-ref refs/heads/main FETCH_HEAD
   git reset            # 用最新 commit 建立 index，不會改動任何工作檔案
