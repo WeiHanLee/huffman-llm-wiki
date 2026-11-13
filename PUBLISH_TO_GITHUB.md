@@ -21,13 +21,31 @@
 
 ## 步驟
 
+### 0. 還原 git 紀錄（只在本資料夾沒有 `.git` 時做）
+這個資料夾是由雲端 Claude 寫進電腦的，`.git` 無法直接傳送，所以完整 git 紀錄打包在**上一層**的 `..\huffman-history.bundle`。
+```bash
+git rev-parse --is-inside-work-tree 2>/dev/null && echo HAS_GIT || echo NO_GIT
+```
+- **NO_GIT** → 在本資料夾執行：
+  ```bash
+  git bundle verify ../huffman-history.bundle
+  git init -b main
+  git fetch ../huffman-history.bundle main:main
+  git reset            # 用最新 commit 建立 index，不會改動任何工作檔案
+  git status --short   # 應該是空的（工作檔案與最新 commit 完全一致）
+  git log --oneline | head -3
+  ```
+  若 `git status` 顯示有檔案變更，多半只是換行字元（CRLF/LF）差異：先執行 `git diff --stat` 給我看，**不要 commit**。
+- **HAS_GIT** → 跳過這步。
+
+
 ### 1. 檢查環境
 ```bash
 git --version
 gh --version
 gh auth status
 git status --short          # 應該是乾淨的
-git log --oneline | head -5 # 最新一筆應該是 "publish: ..." 或 "docs/: standalone pages ..."
+git log --oneline | head -5 # 最新一筆應該是 "publish: ..."
 git branch --show-current   # 應該是 main
 ```
 - 沒有 `gh`：Windows 用 `winget install --id GitHub.cli`，macOS 用 `brew install gh`，裝完執行 `gh auth login`（選 GitHub.com → HTTPS → 用瀏覽器登入）。
